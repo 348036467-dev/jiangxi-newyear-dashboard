@@ -2754,7 +2754,7 @@
      * 2. campaignStartDate：累计统计起始日期，日数据第 1 行从这一天开始使用。
      * 3. dailyStartHour / dailyEndHour：每日发送时段。
      * 4. unitPrice：每条收入单价，当前为 0.05 元。
-     * 5. eveningTailValue：20点后至24点的小幅尾量，保证数字缓慢延续。
+     * 5. offHoursRatio：每天总量中用于凌晨和晚间平缓更新的比例，主要量仍集中在 08:00-20:00。
      * 6. dailyData：每行对应一个业务日的 11 个地市发送量。
      */
     const CONFIG = {
@@ -2765,7 +2765,7 @@
       dailyEndHour: 20,
       refreshSeconds: 1,
       unitPrice: 0.05,
-      eveningTailValue: 20000,
+      offHoursRatio: 0.01,
 
       cityNames: ["南昌","九江","景德镇","萍乡","新余","鹰潭","赣州","宜春","上饶","吉安","抚州"],
 
@@ -2895,10 +2895,11 @@
       cityPrefixByDay.push(previous.map((value, cityIndex) => value + day.values[cityIndex]));
     });
 
-    function allocateEveningTail(day) {
-      const totalTail = Math.max(0, Math.round(Number(CONFIG.eveningTailValue) || 0));
+    function allocateOffHours(day) {
       const weightTotal = day.values.reduce((sum, value) => sum + value, 0);
-      if (!totalTail || !weightTotal) {
+      const ratio = clamp(Number(CONFIG.offHoursRatio) || 0, 0, 0.08);
+      const totalOffHours = Math.floor(weightTotal * ratio);
+      if (!totalOffHours || !weightTotal) {
         return CONFIG.cityNames.map(() => 0);
       }
 
@@ -2906,19 +2907,14 @@
       let assigned = 0;
       day.values.forEach((value, cityIndex) => {
         const isLast = cityIndex === day.values.length - 1;
-        const tail = isLast ? totalTail - assigned : Math.floor(totalTail * value / weightTotal);
-        values.push(Math.max(0, tail));
-        assigned += tail;
+        const offHours = isLast ? totalOffHours - assigned : Math.floor(totalOffHours * value / weightTotal);
+        values.push(Math.max(0, offHours));
+        assigned += offHours;
       });
       return values;
     }
 
-    const eveningTailByDay = sourceDays.map(allocateEveningTail);
-    const eveningTailPrefixByDay = [CONFIG.cityNames.map(() => 0)];
-    eveningTailByDay.forEach((dayValues) => {
-      const previous = eveningTailPrefixByDay[eveningTailPrefixByDay.length - 1];
-      eveningTailPrefixByDay.push(previous.map((value, cityIndex) => value + dayValues[cityIndex]));
-    });
+    const offHoursByDay = sourceDays.map(allocateOffHours);
     const scheduleCache = new Map();
     const secondScheduleCache = new Map();
 
@@ -3067,7 +3063,9 @@
         return scheduleCache.get(cacheKey);
       }
 
-      const amount = sourceDays[dayIndex].values[cityIndex];
+      const fullAmount = sourceDays[dayIndex].values[cityIndex];
+      const offHoursAmount = offHoursByDay[dayIndex][cityIndex];
+      const amount = Math.max(0, fullAmount - offHoursAmount * 2);
       const totalMinutes = Math.max(1, (Number(CONFIG.dailyEndHour) - Number(CONFIG.dailyStartHour)) * 60);
       const seed = hashString(`${sourceDays[dayIndex].date}|${CONFIG.cityNames[cityIndex]}`);
       const random = createRandom(seed);
@@ -3144,6 +3142,8 @@
 
     function getDayReleased(dayIndex, cityIndex, date) {
       const amount = sourceDays[dayIndex].values[cityIndex];
+      const offHoursAmount = offHoursByDay[dayIndex][cityIndex];
+      const daytimeAmount = Math.max(0, amount - offHoursAmount * 2);
       const startHour = Number(CONFIG.dailyStartHour) || 8;
       const endHour = Number(CONFIG.dailyEndHour) || 20;
       const secondsOfDay = date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
@@ -3151,10 +3151,10 @@
       const endSeconds = endHour * 3600;
 
       if (secondsOfDay < startSeconds) {
-        return 0;
+        return getOffHoursReleased(offHoursAmount, secondsOfDay, 0, startSeconds, cityIndex);
       }
       if (secondsOfDay >= endSeconds) {
-        return amount;
+        return offHoursAmount + daytimeAmount;
       }
 
       const elapsedSeconds = secondsOfDay - startSeconds;
@@ -3163,27 +3163,31 @@
       const schedule = buildMinuteSchedule(dayIndex, cityIndex);
       const minuteQuota = schedule.quotas[minuteIndex] || 0;
       const minuteSeed = hashString(`${schedule.seed}|${minuteIndex}`);
-      return schedule.prefix[minuteIndex] + getMinuteReleased(minuteQuota, second, minuteSeed, cityIndex);
+      return offHoursAmount + schedule.prefix[minuteIndex] + getMinuteReleased(minuteQuota, second, minuteSeed, cityIndex);
     }
 
-    function getEveningTailReleased(dayIndex, cityIndex, date) {
-      const amount = eveningTailByDay[dayIndex]?.[cityIndex] || 0;
+    function getOffHoursReleased(amount, secondsOfDay, windowStart, windowEnd, cityIndex) {
       if (!amount) {
         return 0;
       }
 
-      const endSeconds = (Number(CONFIG.dailyEndHour) || 20) * 3600;
-      const secondsOfDay = date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
       const delaySeconds = (cityIndex % 4) * 9;
-      const elapsedSeconds = secondsOfDay - endSeconds - delaySeconds;
-      const availableSeconds = 24 * 3600 - endSeconds - delaySeconds;
+      const elapsedSeconds = secondsOfDay - windowStart - delaySeconds;
+      const availableSeconds = windowEnd - windowStart - delaySeconds;
       const ratio = clamp(elapsedSeconds / Math.max(1, availableSeconds), 0, 1);
       return Math.floor(amount * ratio);
     }
 
+    function getEveningTailReleased(dayIndex, cityIndex, date) {
+      const amount = offHoursByDay[dayIndex]?.[cityIndex] || 0;
+      const endSeconds = (Number(CONFIG.dailyEndHour) || 20) * 3600;
+      const secondsOfDay = date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
+      return getOffHoursReleased(amount, secondsOfDay, endSeconds, 24 * 3600, cityIndex);
+    }
+
     function getTodayTotalAt(dayIndex, date) {
       return CONFIG.cityNames.reduce((sum, _, cityIndex) => (
-        sum + getDayReleased(dayIndex, cityIndex, date)
+        sum + getDayReleased(dayIndex, cityIndex, date) + getEveningTailReleased(dayIndex, cityIndex, date)
       ), 0);
     }
 
@@ -3194,7 +3198,6 @@
       const hasCurrentDay = liveDayIndex >= 0 && liveDayIndex < sourceDays.length;
       const completedDayCount = liveDayIndex < 0 ? 0 : Math.min(liveDayIndex, sourceDays.length);
       const completedValues = cityPrefixByDay[completedDayCount];
-      const completedTailValues = eveningTailPrefixByDay[completedDayCount];
       const todayCities = CONFIG.cityNames.map((name, cityIndex) => {
         const current = hasCurrentDay
           ? getDayReleased(dayIndex, cityIndex, date) + getEveningTailReleased(dayIndex, cityIndex, date)
@@ -3206,7 +3209,7 @@
         };
       });
       const cumulativeCities = CONFIG.cityNames.map((name, cityIndex) => {
-        const current = completedValues[cityIndex] + completedTailValues[cityIndex] + todayCities[cityIndex].current;
+        const current = completedValues[cityIndex] + todayCities[cityIndex].current;
         return {
           name,
           current,
@@ -3293,7 +3296,7 @@
       const nowSeconds = snapshot.now.getHours() * 3600 + snapshot.now.getMinutes() * 60 + snapshot.now.getSeconds();
       const hasCurrentDay = snapshot.liveDayIndex >= 0 && snapshot.liveDayIndex < sourceDays.length;
       const isSending = hasCurrentDay && nowSeconds >= startSeconds && nowSeconds < endSeconds;
-      const isUpdating = hasCurrentDay && nowSeconds >= startSeconds;
+      const isUpdating = hasCurrentDay;
       const currentValues = snapshot.todayCities.map((city) => city.current);
       const unitPrice = Math.max(0, Number(CONFIG.unitPrice) || 0);
       const cityDeltas = previousTodayCityValues
@@ -3308,11 +3311,9 @@
       document.body?.classList.toggle("is-live", isUpdating);
       refs.liveStatusText.textContent = isSending
         ? "发送进行中"
-        : nowSeconds < startSeconds
-          ? `${String(CONFIG.dailyStartHour).padStart(2, "0")}:00 启动`
-          : hasCurrentDay
-            ? "数据持续更新"
-            : "今日战报";
+        : hasCurrentDay
+          ? "数据持续更新"
+          : "今日战报";
 
       if (isUpdating && totalDelta > 0 && leadingDelta?.delta > 0) {
         refs.todaySendDelta.textContent = `本次 +${formatNumber(totalDelta)} 条`;
