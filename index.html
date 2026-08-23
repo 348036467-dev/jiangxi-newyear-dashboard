@@ -775,11 +775,11 @@
       <div></div>
       <div class="title-wrap">
         <h1 class="board-title" id="boardTitle">江西新春发展实时战报</h1>
-        <div class="title-subline">新春发展量滚动展示</div>
+        <div class="title-subline">新春发送量分时滚动展示</div>
       </div>
       <div class="status-box">
-        <div>当前时间：<span class="status-strong" id="currentTime">--</span></div>
-        <div><span class="status-strong">数据滚动展示中</span></div>
+        <div>展示时间：<span class="status-strong" id="currentTime">--</span></div>
+        <div><span class="status-strong">08:00-20:00 分批滚动中</span></div>
       </div>
     </header>
 
@@ -787,17 +787,17 @@
       <section class="panel rank-panel">
         <div class="panel-title">
           <h2>江西 11 个地市排行</h2>
-          <span>按当前发展量自动排序</span>
+          <span>按当前累计发送量自动排序</span>
         </div>
         <div class="rank-list" id="rankList"></div>
       </section>
 
       <section class="stage">
         <div class="hero-panel">
-          <div class="hero-label">累计发展量</div>
+          <div class="hero-label">累计发送量</div>
           <div class="total-number" id="totalNumber">0</div>
           <div class="hero-meta">
-            <span>全省目标：<strong id="provinceTarget">0</strong></span>
+            <span>全省计划总量：<strong id="provinceTarget">0</strong></span>
             <span>活动进度：<strong id="activityProgress">0.0%</strong></span>
             <span>活动周期：<strong id="activityPeriod">--</strong></span>
           </div>
@@ -807,29 +807,29 @@
           <div class="metric-card">
             <div class="metric-label">今日新增</div>
             <div class="metric-value" id="todayNew">0</div>
-            <div class="metric-note">按当前活动进度估算</div>
+            <div class="metric-note">按当日分时批次累计</div>
           </div>
           <div class="metric-card">
             <div class="metric-label">本小时新增</div>
             <div class="metric-value" id="hourNew">0</div>
-            <div class="metric-note">按当前小时进度估算</div>
+            <div class="metric-note">按本小时批次累计</div>
           </div>
           <div class="metric-card">
-            <div class="metric-label">目标完成率</div>
+            <div class="metric-label">活动完成率</div>
             <div class="metric-value" id="finishRate">0.0%</div>
-            <div class="metric-note">累计量 / 全省目标</div>
+            <div class="metric-note">累计发送量 / 计划总量</div>
           </div>
           <div class="metric-card">
-            <div class="metric-label">剩余目标</div>
+            <div class="metric-label">剩余计划量</div>
             <div class="metric-value" id="remainingTarget">0</div>
-            <div class="metric-note">全省目标 - 当前累计</div>
+            <div class="metric-note">计划总量 - 当前累计</div>
           </div>
         </div>
 
         <div class="trend-panel">
           <div class="trend-head">
-            <h2>春节活动累计趋势</h2>
-            <div class="trend-legend"><span class="legend-line"></span> 累计发展趋势</div>
+            <h2>春节活动累计发送趋势</h2>
+            <div class="trend-legend"><span class="legend-line"></span> 累计发送趋势</div>
           </div>
           <div class="trend-canvas-wrap">
             <canvas id="trendChart"></canvas>
@@ -839,7 +839,7 @@
     </main>
 
     <footer class="footer">
-      <span>数据按活动周期滚动展示</span>
+      <span>日报量按每日 08:00-20:00 分批滚动展示</span>
       <span>最后刷新时间：<strong id="lastRefresh">--</strong></span>
     </footer>
   </div>
@@ -851,41 +851,89 @@
      * =========================
      *
      * 1. boardTitle：页面大标题。
-     * 2. startTime / endTime：活动开始时间和结束时间，格式固定为 "年-月-日 时:分:秒"。
-     * 3. provinceTargetValue：全省总目标量。填 null 时，页面会自动按各地市目标量相加。
-     * 4. refreshSeconds：数字刷新间隔，建议 1 或 2。
-     * 5. cities：11 个地市配置。
-     *    - name：地市名称。
-     *    - startValue：本阶段起始量。后续人工修正数据时，把真实已完成量填到这里。
-     *    - targetValue：本阶段最终目标量。
+     * 2. replayStartDate：把 Excel 第一天对应到哪个实际展示日。
+     *    - 当前设为 2026-08-23，第一天对应 8 月 23 日，之后每天顺延一行数据。
+     *    - 如果要按 Excel 原始日期播放，把它改为 null。
+     * 3. dailyStartHour / dailyEndHour：每天滚动时段，当前为 08:00-20:00。
+     * 4. refreshSeconds：页面刷新间隔，建议保持 2 秒。
+     * 5. dailyData：来自“地市日报表”的发送总量，一行对应一天。
      *
-     * 说明：
-     * - 当前默认时间设置为覆盖今天，方便双击 index.html 后马上看到数字滚动。
-     * - 正式春节活动使用时，把 startTime / endTime 改成实际活动周期即可。
-     * - 如果 2 月 5 日人工核对后，南昌已有 300 万，就把南昌 startValue 改为 3000000，
-     *   同时把 startTime 改为 "2026-02-05 10:00:00"，页面会从新的基础继续往上跑。
+     * 滚动规则：
+     * - 每天 08:00 前不增长，20:00 后完成当天全量。
+     * - 各地市按不同的分钟权重和秒级批次错峰增长，不会一起跳数。
+     * - 计算为固定时间轨迹，刷新网页不会回退或重新随机。
      */
     const CONFIG = {
       boardTitle: "江西新春发展实时战报",
 
-      startTime: "2026-07-10 00:00:00",
-      endTime: "2026-07-24 23:59:59",
-
-      provinceTargetValue: 50000000,
+      replayStartDate: "2026-08-23",
+      dailyStartHour: 8,
+      dailyEndHour: 20,
       refreshSeconds: 2,
 
-      cities: [
-        { name: "南昌", startValue: 0, targetValue: 10000000 },
-        { name: "赣州", startValue: 0, targetValue: 20000000 },
-        { name: "九江", startValue: 0, targetValue: 6000000 },
-        { name: "上饶", startValue: 0, targetValue: 2000000 },
-        { name: "宜春", startValue: 0, targetValue: 3000000 },
-        { name: "吉安", startValue: 0, targetValue: 3000000 },
-        { name: "抚州", startValue: 0, targetValue: 2000000 },
-        { name: "景德镇", startValue: 0, targetValue: 1000000 },
-        { name: "萍乡", startValue: 0, targetValue: 1000000 },
-        { name: "新余", startValue: 0, targetValue: 1000000 },
-        { name: "鹰潭", startValue: 0, targetValue: 1000000 }
+      cityNames: ["南昌","九江","景德镇","萍乡","新余","鹰潭","赣州","宜春","上饶","吉安","抚州"],
+
+      // 每行格式：[数据日期, 南昌, 九江, 景德镇, 萍乡, 新余, 鹰潭, 赣州, 宜春, 上饶, 吉安, 抚州]
+      dailyData: [
+        ["2026-02-01",7040,113522,11537,46493,1691,0,152571,70892,96422,213161,86040],
+        ["2026-02-02",16359,125406,52198,51548,1682,1006,153505,242373,401334,190862,72024],
+        ["2026-02-03",117924,416247,13458,40646,71305,1645,235535,77996,145007,494268,155682],
+        ["2026-02-04",39136,187851,105301,154461,1859,5929,745196,329979,289153,204745,151858],
+        ["2026-02-05",151195,81222,40000,84777,2264,11632,838141,236132,129064,246298,313886],
+        ["2026-02-06",123068,504920,57302,79549,327191,1647,921579,491574,316170,149760,410494],
+        ["2026-02-07",89705,192129,13701,74043,87590,0,432171,676872,204250,223692,198557],
+        ["2026-02-08",55093,163872,13894,66640,185875,0,825884,432925,178186,171739,197267],
+        ["2026-02-09",156662,376788,16884,239513,196389,3973,963456,672300,320725,996570,47668],
+        ["2026-02-10",341566,493589,34538,307458,55031,1653,1171425,1503668,658524,698053,182307],
+        ["2026-02-11",467444,2341793,45237,306262,181551,42146,5933548,2054841,928605,1908933,401415],
+        ["2026-02-12",777715,550219,61121,618143,73855,200969,1690165,2935176,926165,2774360,854820],
+        ["2026-02-13",597115,1917703,139596,233321,134673,503321,3921881,3221025,1433265,2324554,685310],
+        ["2026-02-14",1211443,2977705,191690,400089,83494,495760,4664826,2517593,2328590,2506541,664416],
+        ["2026-02-15",725807,2344608,155364,525346,1035871,532150,10170112,1902344,2696340,4000378,1659231],
+        ["2026-02-16",1265728,3648538,377644,1251862,1326258,411045,7265722,16175844,7064975,11417142,2573811],
+        ["2026-02-17",578108,787013,47464,998470,394888,196425,2310760,3654640,2830905,2437368,1216224],
+        ["2026-02-18",195421,466200,26816,563595,264758,127405,904018,654035,1067192,528015,303967],
+        ["2026-02-19",127871,526204,29559,288571,230096,101202,1939512,571358,982933,459949,191563],
+        ["2026-02-20",225539,481887,19333,219971,242612,89569,1954148,814640,934588,578640,332833],
+        ["2026-02-21",219376,572487,16779,175428,512321,121962,782167,637510,873616,462649,281303],
+        ["2026-02-22",174507,685751,13769,170156,194793,232535,889844,902870,732905,775614,213607],
+        ["2026-02-23",144030,767701,9097,137298,170710,66466,577562,631161,568336,688433,156795],
+        ["2026-02-24",31542,254008,9922,97291,24896,500,1103933,632915,444540,511531,631198],
+        ["2026-02-25",39970,192564,7737,77820,169820,0,631038,989590,586438,167955,88215],
+        ["2026-02-26",76406,630261,6133,88852,35693,2328,205859,210483,472198,166377,64600],
+        ["2026-02-27",12838,344728,4593,48884,15967,21310,144549,163752,304127,107305,81679],
+        ["2026-02-28",7146,129394,176975,18453,13046,0,100157,58591,291938,96582,83750],
+        ["2026-03-01",14196,662385,4642,53039,9324,0,149735,250672,317157,194483,83790],
+        ["2026-03-02",22348,286512,24435,30277,2915,41604,367025,119446,399795,229018,67468],
+        ["2026-03-03",129220,560665,9495,298458,191324,73584,659157,356600,407678,1664182,612591],
+        ["2026-03-04",14018,314665,27533,50910,3539,68527,129457,190156,366322,162285,106531],
+        ["2026-03-05",71242,632951,16267,30958,3307,500,358495,344379,390006,72949,98095],
+        ["2026-03-06",8933,598079,19869,16463,4121,500,89462,150964,169775,54979,93550],
+        ["2026-03-07",13426,135708,33812,27237,3725,0,75847,133690,113520,43437,76782],
+        ["2026-03-08",321,362026,65,29,2728,0,3966,48415,47640,169351,86516],
+        ["2026-03-09",49005,113423,26806,7265,1506,1552,73370,166920,146165,64828,61826],
+        ["2026-03-10",3413,195533,20404,11234,2348,946,55178,343732,88148,112146,75392],
+        ["2026-03-11",30388,84172,18936,7224,2574,2104,62428,404924,101051,40706,63207],
+        ["2026-03-12",24920,292982,116716,14577,12460,500,221082,98808,71740,43671,66628],
+        ["2026-03-13",41571,544698,59368,6942,2649,10617,73853,247207,79791,84840,49424],
+        ["2026-03-14",9569,119827,18296,6850,3328,0,93941,166166,99733,39077,59628],
+        ["2026-03-15",5026,75733,17460,5043,5637,0,58417,109690,157558,102304,43401],
+        ["2026-03-16",6522,49243,7931,9243,3461,2226,46673,401657,119631,340858,47412],
+        ["2026-03-17",11231,232019,8805,15046,2552,500,64732,87346,63656,185325,82152],
+        ["2026-03-18",5923,49863,3990,10128,2229,1604,92388,75824,138456,34662,57413],
+        ["2026-03-19",50441,51899,20336,5535,12155,500,49150,108122,57777,34415,42999],
+        ["2026-03-20",15173,42506,17782,9265,2141,503,549933,99049,968466,49261,176854],
+        ["2026-03-21",15190,81468,29894,5515,2779,0,74793,102275,367060,87958,43679],
+        ["2026-03-22",30,164785,18378,29,3387,0,66951,68745,51586,96029,287998],
+        ["2026-03-23",19147,30667,167827,433,2183,1666,132879,49564,44881,191393,46352],
+        ["2026-03-24",28888,108554,14536,212,1157,64746,339822,105899,85915,75879,159137],
+        ["2026-03-25",101498,104757,70692,233,1368,1106,224085,106813,129100,29302,112700],
+        ["2026-03-26",209,161833,27975,69769,1077,15720,208060,47790,117451,22030,321689],
+        ["2026-03-27",203112,170922,92578,123,2534,12494,162328,82011,346592,113673,164528],
+        ["2026-03-28",24543,118369,17853,2,1524,500,177543,91128,87914,45462,18509],
+        ["2026-03-29",7907,63654,21556,4709,3775,0,54574,59276,70543,22180,33758],
+        ["2026-03-30",57394,62592,13685,1626,1155,2052,47254,188082,88341,32119,220764],
+        ["2026-03-31",30532,198223,31286,203,1182,5194,99272,70916,57065,44750,71472]
       ]
     };
   </script>
@@ -914,13 +962,89 @@
 
     let latestSnapshot = null;
     let resizeTimer = null;
+    let lastRenderedTotal = null;
 
-    function toDate(value) {
-      return new Date(String(value).replace(/-/g, "/"));
-    }
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const previewParams = new URLSearchParams(window.location.search);
+    const previewStartedAt = Date.now();
+    const sourceDays = CONFIG.dailyData.map((row) => ({
+      date: row[0],
+      values: row.slice(1).map((value) => Math.max(0, Number(value) || 0))
+    }));
+    const cityTargets = CONFIG.cityNames.map((_, cityIndex) => (
+      sourceDays.reduce((sum, day) => sum + day.values[cityIndex], 0)
+    ));
+    const cityPrefixByDay = [CONFIG.cityNames.map(() => 0)];
+    const scheduleCache = new Map();
+
+    sourceDays.forEach((day, dayIndex) => {
+      cityPrefixByDay.push(cityPrefixByDay[dayIndex].map((value, cityIndex) => (
+        value + day.values[cityIndex]
+      )));
+    });
 
     function clamp(value, min, max) {
       return Math.min(Math.max(value, min), max);
+    }
+
+    function parseDateKey(value) {
+      const parts = String(value).split("-").map(Number);
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+
+    function startOfDay(date) {
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    }
+
+    function addDays(date, amount) {
+      const result = new Date(date);
+      result.setDate(result.getDate() + amount);
+      return result;
+    }
+
+    function calendarDayDifference(later, earlier) {
+      const laterUtc = Date.UTC(later.getFullYear(), later.getMonth(), later.getDate());
+      const earlierUtc = Date.UTC(earlier.getFullYear(), earlier.getMonth(), earlier.getDate());
+      return Math.round((laterUtc - earlierUtc) / DAY_MS);
+    }
+
+    function getReplayStartDay() {
+      return parseDateKey(CONFIG.replayStartDate || sourceDays[0].date);
+    }
+
+    function getLiveDayIndex(date) {
+      return calendarDayDifference(startOfDay(date), getReplayStartDay());
+    }
+
+    function getDisplayNow() {
+      if (previewParams.get("preview") !== "1") {
+        return new Date();
+      }
+
+      const requestedDay = Number(previewParams.get("day"));
+      const dayIndex = clamp(Number.isFinite(requestedDay) ? requestedDay : 0, 0, sourceDays.length - 1);
+      const cycleMs = 6 * 60 * 1000;
+      const ratio = ((Date.now() - previewStartedAt) % cycleMs) / cycleMs;
+      const date = addDays(getReplayStartDay(), dayIndex);
+      date.setHours(Number(CONFIG.dailyStartHour) || 8, 0, 0, 0);
+      date.setTime(date.getTime() + ratio * getDailyDurationMs());
+      return date;
+    }
+
+    function getVisibleDate(liveDate) {
+      if (!CONFIG.replayStartDate) {
+        return liveDate;
+      }
+
+      const sourceIndex = clamp(getLiveDayIndex(liveDate), 0, sourceDays.length - 1);
+      const visibleDate = parseDateKey(sourceDays[sourceIndex].date);
+      visibleDate.setHours(
+        liveDate.getHours(),
+        liveDate.getMinutes(),
+        liveDate.getSeconds(),
+        liveDate.getMilliseconds()
+      );
+      return visibleDate;
     }
 
     function formatNumber(value) {
@@ -937,57 +1061,197 @@
     }
 
     function formatShortDate(value) {
-      const date = toDate(value);
+      const date = value instanceof Date ? value : parseDateKey(value);
       const pad = (num) => String(num).padStart(2, "0");
       return `${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
     }
 
     function getStartDate() {
-      return toDate(CONFIG.startTime);
+      const date = getReplayStartDay();
+      date.setHours(Number(CONFIG.dailyStartHour) || 8, 0, 0, 0);
+      return date;
     }
 
     function getEndDate() {
-      return toDate(CONFIG.endTime);
+      const date = addDays(getReplayStartDay(), sourceDays.length - 1);
+      date.setHours(Number(CONFIG.dailyEndHour) || 20, 0, 0, 0);
+      return date;
     }
 
     function getProvinceTarget() {
-      const configured = Number(CONFIG.provinceTargetValue);
-      if (Number.isFinite(configured) && configured > 0) {
-        return configured;
-      }
-      return CONFIG.cities.reduce((sum, city) => sum + Math.max(0, Number(city.targetValue) || 0), 0);
+      return cityTargets.reduce((sum, value) => sum + value, 0);
+    }
+
+    function getDailyDurationMs() {
+      const startHour = Number(CONFIG.dailyStartHour) || 8;
+      const endHour = Number(CONFIG.dailyEndHour) || 20;
+      return Math.max(1, endHour - startHour) * 60 * 60 * 1000;
     }
 
     function progressAt(date) {
-      const start = getStartDate().getTime();
-      const end = getEndDate().getTime();
-      const current = date.getTime();
-      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
+      const dayIndex = getLiveDayIndex(date);
+      if (dayIndex < 0) {
+        return 0;
+      }
+      if (dayIndex >= sourceDays.length) {
         return 1;
       }
-      return clamp((current - start) / (end - start), 0, 1);
+
+      const startHour = Number(CONFIG.dailyStartHour) || 8;
+      const elapsedMs = (
+        (date.getHours() - startHour) * 60 * 60 * 1000
+        + date.getMinutes() * 60 * 1000
+        + date.getSeconds() * 1000
+        + date.getMilliseconds()
+      );
+      const dayProgress = clamp(elapsedMs / getDailyDurationMs(), 0, 1);
+      return clamp((dayIndex + dayProgress) / sourceDays.length, 0, 1);
     }
 
-    function cityProgressCurve(progress, index) {
-      const rhythm = 0.94 + ((index * 37) % 12) / 100;
-      return clamp(progress * rhythm + progress * progress * (1 - rhythm), 0, 1);
+    function hashString(value) {
+      let hash = 2166136261;
+      for (let index = 0; index < value.length; index += 1) {
+        hash ^= value.charCodeAt(index);
+        hash = Math.imul(hash, 16777619);
+      }
+      return hash >>> 0;
     }
 
-    function getCityValueAt(city, date, index) {
-      const target = Math.max(0, Number(city.targetValue) || 0);
-      const startValue = clamp(Number(city.startValue) || 0, 0, target);
-      const progress = cityProgressCurve(progressAt(date), index);
-      return clamp(startValue + (target - startValue) * progress, startValue, target);
+    function createRandom(seed) {
+      let value = seed >>> 0;
+      return function random() {
+        value += 0x6d2b79f5;
+        let result = value;
+        result = Math.imul(result ^ (result >>> 15), result | 1);
+        result ^= result + Math.imul(result ^ (result >>> 7), result | 61);
+        return ((result ^ (result >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function buildMinuteSchedule(dayIndex, cityIndex) {
+      const cacheKey = `${dayIndex}-${cityIndex}`;
+      if (scheduleCache.has(cacheKey)) {
+        return scheduleCache.get(cacheKey);
+      }
+
+      const amount = sourceDays[dayIndex].values[cityIndex];
+      const totalMinutes = Math.max(1, (Number(CONFIG.dailyEndHour) - Number(CONFIG.dailyStartHour)) * 60);
+      const seed = hashString(`${sourceDays[dayIndex].date}|${CONFIG.cityNames[cityIndex]}`);
+      const random = createRandom(seed);
+      const hourProfile = [0.42, 0.76, 1.04, 1.20, 0.70, 0.62, 1.08, 1.28, 1.22, 1.00, 0.72, 0.44];
+      const cityShiftMinutes = Math.round((random() - 0.5) * 46);
+      const weights = [];
+
+      for (let minute = 0; minute < totalMinutes; minute += 1) {
+        const shiftedMinute = clamp(minute + cityShiftMinutes, 0, totalMinutes - 1);
+        const profileIndex = clamp(Math.floor(shiftedMinute / 60), 0, hourProfile.length - 1);
+        const minuteNoise = 0.50 + random() * 1.02;
+        const quietFactor = random() < 0.10 ? 0.16 : 1;
+        const broadWave = 0.90 + 0.10 * Math.sin(Math.PI * minute / Math.max(1, totalMinutes - 1));
+        weights.push(hourProfile[profileIndex] * minuteNoise * quietFactor * broadWave);
+      }
+
+      const weightTotal = weights.reduce((sum, value) => sum + value, 0);
+      const quotas = [];
+      let carry = 0;
+      let assigned = 0;
+
+      weights.forEach((weight) => {
+        const exact = amount * weight / Math.max(1, weightTotal) + carry;
+        const quota = Math.floor(exact);
+        carry = exact - quota;
+        quotas.push(quota);
+        assigned += quota;
+      });
+
+      quotas[quotas.length - 1] += amount - assigned;
+      const prefix = [0];
+      quotas.forEach((quota) => prefix.push(prefix[prefix.length - 1] + quota));
+
+      const schedule = { quotas, prefix, seed };
+      scheduleCache.set(cacheKey, schedule);
+      return schedule;
+    }
+
+    function getMinuteReleased(quota, second, seed) {
+      if (quota <= 0) {
+        return 0;
+      }
+
+      const random = createRandom(seed);
+      const burstCount = quota >= 500 ? 4 : quota >= 80 ? 3 : quota >= 8 ? 2 : 1;
+      const offsets = [];
+      const weights = [];
+
+      for (let index = 0; index < burstCount; index += 1) {
+        const slot = (index + 1) * 60 / (burstCount + 1);
+        offsets.push(clamp(Math.round(slot + (random() - 0.5) * 10), 2, 58));
+        weights.push(0.65 + random() * 0.70);
+      }
+
+      const weightTotal = weights.reduce((sum, value) => sum + value, 0);
+      const chunks = [];
+      let assigned = 0;
+      let carry = 0;
+
+      weights.forEach((weight) => {
+        const exact = quota * weight / weightTotal + carry;
+        const chunk = Math.floor(exact);
+        carry = exact - chunk;
+        chunks.push(chunk);
+        assigned += chunk;
+      });
+      chunks[chunks.length - 1] += quota - assigned;
+
+      return chunks.reduce((sum, chunk, index) => (
+        second >= offsets[index] ? sum + chunk : sum
+      ), 0);
+    }
+
+    function getDayReleased(dayIndex, cityIndex, date) {
+      const amount = sourceDays[dayIndex].values[cityIndex];
+      const startHour = Number(CONFIG.dailyStartHour) || 8;
+      const endHour = Number(CONFIG.dailyEndHour) || 20;
+      const secondsOfDay = date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
+      const startSeconds = startHour * 3600;
+      const endSeconds = endHour * 3600;
+
+      if (secondsOfDay < startSeconds) {
+        return 0;
+      }
+      if (secondsOfDay >= endSeconds) {
+        return amount;
+      }
+
+      const elapsedSeconds = secondsOfDay - startSeconds;
+      const minuteIndex = Math.floor(elapsedSeconds / 60);
+      const second = elapsedSeconds % 60;
+      const schedule = buildMinuteSchedule(dayIndex, cityIndex);
+      const minuteQuota = schedule.quotas[minuteIndex] || 0;
+      const minuteSeed = hashString(`${schedule.seed}|${minuteIndex}`);
+      return schedule.prefix[minuteIndex] + getMinuteReleased(minuteQuota, second, minuteSeed);
+    }
+
+    function getCityValueAt(cityIndex, date) {
+      const dayIndex = getLiveDayIndex(date);
+      if (dayIndex < 0) {
+        return 0;
+      }
+      if (dayIndex >= sourceDays.length) {
+        return cityTargets[cityIndex];
+      }
+
+      return cityPrefixByDay[dayIndex][cityIndex] + getDayReleased(dayIndex, cityIndex, date);
     }
 
     function getSnapshot(date) {
       const provinceTarget = getProvinceTarget();
       const progress = progressAt(date);
-      const cities = CONFIG.cities.map((city, index) => {
-        const current = getCityValueAt(city, date, index);
-        const target = Math.max(0, Number(city.targetValue) || 0);
+      const cities = CONFIG.cityNames.map((name, cityIndex) => {
+        const current = getCityValueAt(cityIndex, date);
+        const target = cityTargets[cityIndex];
         return {
-          name: city.name,
+          name,
           current,
           target,
           rate: target > 0 ? current / target : 0
@@ -1013,7 +1277,7 @@
     }
 
     function getTotalAt(date) {
-      return CONFIG.cities.reduce((sum, city, index) => sum + getCityValueAt(city, date, index), 0);
+      return CONFIG.cityNames.reduce((sum, _, cityIndex) => sum + getCityValueAt(cityIndex, date), 0);
     }
 
     function easeOutCubic(value) {
@@ -1081,7 +1345,7 @@
         row.querySelector(".rank-badge").textContent = index + 1;
         row.querySelector(".city-name").textContent = city.name;
         row.querySelector(".city-current").textContent = formatNumber(city.current);
-        row.querySelector(".city-target").textContent = `目标 ${formatNumber(city.target)}`;
+        row.querySelector(".city-target").textContent = `计划 ${formatNumber(city.target)}`;
         row.querySelector(".city-rate").textContent = formatPercent(city.rate);
         row.querySelector(".progress-bar").style.width = `${clamp(city.rate, 0, 1) * 100}%`;
         fragment.appendChild(row);
@@ -1091,16 +1355,19 @@
     }
 
     function render() {
-      const now = new Date();
+      const now = getDisplayNow();
+      const visibleNow = getVisibleDate(now);
       latestSnapshot = getSnapshot(now);
       const duration = Math.max(650, Number(CONFIG.refreshSeconds || 2) * 850);
+      const roundedTotal = Math.round(latestSnapshot.total);
+      const totalChanged = lastRenderedTotal !== null && roundedTotal > lastRenderedTotal;
 
       refs.boardTitle.textContent = CONFIG.boardTitle;
-      refs.currentTime.textContent = formatDateTime(now);
+      refs.currentTime.textContent = formatDateTime(visibleNow);
       refs.provinceTarget.textContent = formatNumber(latestSnapshot.provinceTarget);
       refs.activityProgress.textContent = formatPercent(latestSnapshot.progress);
-      refs.activityPeriod.textContent = `${formatShortDate(CONFIG.startTime)} 至 ${formatShortDate(CONFIG.endTime)}`;
-      refs.lastRefresh.textContent = formatDateTime(now);
+      refs.activityPeriod.textContent = `${formatShortDate(sourceDays[0].date)} 至 ${formatShortDate(sourceDays[sourceDays.length - 1].date)}`;
+      refs.lastRefresh.textContent = formatDateTime(visibleNow);
 
       animateValue("total", refs.totalNumber, latestSnapshot.total, formatNumber, duration);
       animateValue("todayNew", refs.todayNew, latestSnapshot.todayNew, formatNumber, duration);
@@ -1108,16 +1375,19 @@
       animateValue("finishRate", refs.finishRate, latestSnapshot.finishRate, formatPercent, duration);
       animateValue("remaining", refs.remainingTarget, latestSnapshot.remaining, formatNumber, duration);
 
-      refs.totalNumber.classList.remove("pulse");
-      void refs.totalNumber.offsetWidth;
-      refs.totalNumber.classList.add("pulse");
+      if (totalChanged) {
+        refs.totalNumber.classList.remove("pulse");
+        void refs.totalNumber.offsetWidth;
+        refs.totalNumber.classList.add("pulse");
+      }
+      lastRenderedTotal = roundedTotal;
 
       renderRanking(latestSnapshot.cities);
       drawTrend();
     }
 
     function updateClockOnly() {
-      refs.currentTime.textContent = formatDateTime(new Date());
+      refs.currentTime.textContent = formatDateTime(getVisibleDate(getDisplayNow()));
     }
 
     function setupTrendCanvas() {
@@ -1236,9 +1506,9 @@
       ctx.shadowBlur = 0;
 
       ctx.fillStyle = "rgba(255, 236, 174, 0.72)";
-      ctx.fillText(formatShortDate(CONFIG.startTime), left, height - 10);
+      ctx.fillText(formatShortDate(sourceDays[0].date), left, height - 10);
       ctx.textAlign = "right";
-      ctx.fillText(formatShortDate(CONFIG.endTime), left + chartWidth, height - 10);
+      ctx.fillText(formatShortDate(sourceDays[sourceDays.length - 1].date), left + chartWidth, height - 10);
       ctx.textAlign = "left";
     }
 
