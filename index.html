@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>江西新春发展实时战报</title>
+  <title>云信产品新春发展大屏战报</title>
   <style>
     :root {
       --red-deep: #320006;
@@ -259,23 +259,37 @@
       background: linear-gradient(90deg, transparent, var(--gold), transparent);
     }
 
-    .status-box {
-      justify-self: end;
-      min-width: 320px;
-      padding: 12px 16px;
-      border: 1px solid rgba(255, 211, 106, 0.42);
-      border-radius: 8px;
-      background: rgba(80, 0, 8, 0.46);
-      box-shadow: inset 0 0 18px rgba(255, 183, 66, 0.12);
-      text-align: right;
-      color: var(--muted);
-      font-size: 15px;
-      line-height: 1.75;
+    .header-mark {
+      justify-self: start;
+      padding-left: 18px;
+      border-left: 3px solid rgba(255, 211, 106, 0.78);
+      color: rgba(255, 236, 174, 0.74);
+      font-size: 18px;
+      font-weight: 700;
     }
 
-    .status-strong {
+    .clock-box {
+      justify-self: end;
+      min-width: 280px;
+      padding-left: 18px;
+      border-left: 1px solid rgba(255, 211, 106, 0.48);
+      text-align: right;
+    }
+
+    .current-date {
+      color: rgba(255, 236, 174, 0.68);
+      font-size: 14px;
+    }
+
+    .current-clock {
+      margin-top: 2px;
       color: var(--gold-soft);
-      font-weight: 700;
+      font-family: "Arial Black", "Microsoft YaHei", sans-serif;
+      font-size: 28px;
+      line-height: 1.1;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 14px rgba(255, 197, 67, 0.38);
     }
 
     .content {
@@ -356,7 +370,7 @@
 
     .rank-row {
       display: grid;
-      grid-template-columns: 42px minmax(50px, 70px) minmax(0, 1fr) 80px;
+      grid-template-columns: 42px minmax(56px, 74px) minmax(0, 1fr);
       align-items: center;
       gap: 11px;
       min-height: 0;
@@ -422,6 +436,12 @@
       font-weight: 800;
     }
 
+    .city-income {
+      color: rgba(255, 236, 174, 0.68);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
     .progress-track {
       width: 100%;
       height: 9px;
@@ -439,14 +459,6 @@
       transition: width 0.9s ease;
     }
 
-    .city-rate {
-      color: var(--gold-soft);
-      font-size: 17px;
-      font-weight: 800;
-      text-align: right;
-      white-space: nowrap;
-    }
-
     .stage {
       display: grid;
       min-height: 0;
@@ -455,8 +467,32 @@
     }
 
     .hero-panel {
-      padding: 26px 30px 24px;
+      padding: 22px 30px;
+    }
+
+    .today-summary {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) 1px minmax(270px, 0.8fr);
+      align-items: center;
+      min-height: 226px;
+    }
+
+    .summary-main {
+      position: relative;
+      min-width: 0;
       text-align: center;
+    }
+
+    .summary-divider {
+      width: 1px;
+      height: 72%;
+      background: linear-gradient(transparent, rgba(255, 220, 125, 0.62), transparent);
+    }
+
+    .revenue-block {
+      min-width: 0;
+      padding-left: 34px;
+      text-align: left;
     }
 
     .hero-label {
@@ -481,23 +517,43 @@
       white-space: nowrap;
     }
 
+    .summary-unit {
+      margin-top: 3px;
+      color: rgba(255, 236, 174, 0.62);
+      font-size: 14px;
+    }
+
+    .revenue-label {
+      color: rgba(255, 236, 174, 0.76);
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .revenue-value {
+      margin-top: 12px;
+      color: var(--gold-soft);
+      font-family: "Arial Black", "Microsoft YaHei", sans-serif;
+      font-size: 46px;
+      line-height: 1.08;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      text-shadow: 0 0 20px rgba(255, 190, 63, 0.44);
+    }
+
+    .revenue-note {
+      margin-top: 12px;
+      color: rgba(255, 236, 174, 0.56);
+      font-size: 13px;
+    }
+
     .total-number.pulse {
       animation: numberPulse 0.72s ease;
     }
 
-    .hero-meta {
-      display: flex;
-      justify-content: center;
-      gap: 28px;
-      margin-top: 13px;
-      color: rgba(255, 236, 174, 0.75);
-      font-size: 15px;
-      flex-wrap: wrap;
-    }
-
     .metrics {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 14px;
     }
 
@@ -521,6 +577,10 @@
       font-variant-numeric: tabular-nums;
       text-shadow: 0 0 16px rgba(255, 190, 63, 0.42);
       word-break: keep-all;
+    }
+
+    .metric-value.city-leader {
+      font-size: 30px;
     }
 
     .metric-note {
@@ -690,11 +750,22 @@
         width: 84px;
       }
 
-      .status-box {
-        min-width: 270px;
-        padding: 7px 10px;
-        font-size: 12px;
-        line-height: 1.55;
+      .header-mark {
+        padding-left: 12px;
+        font-size: 14px;
+      }
+
+      .clock-box {
+        min-width: 236px;
+        padding-left: 12px;
+      }
+
+      .current-date {
+        font-size: 11px;
+      }
+
+      .current-clock {
+        font-size: 22px;
       }
 
       .content {
@@ -724,7 +795,7 @@
       }
 
       .rank-row {
-        grid-template-columns: 32px 50px minmax(0, 1fr) 58px;
+        grid-template-columns: 32px 56px minmax(0, 1fr);
         gap: 6px;
         padding: 3px 6px;
       }
@@ -748,12 +819,12 @@
         font-size: 15px;
       }
 
-      .progress-track {
-        height: 6px;
+      .city-income {
+        font-size: 9px;
       }
 
-      .city-rate {
-        font-size: 14px;
+      .progress-track {
+        height: 6px;
       }
 
       .stage {
@@ -765,6 +836,11 @@
         padding: 12px 20px 10px;
       }
 
+      .today-summary {
+        grid-template-columns: minmax(0, 1.35fr) 1px minmax(220px, 0.75fr);
+        min-height: 158px;
+      }
+
       .hero-label {
         font-size: 18px;
       }
@@ -774,10 +850,22 @@
         font-size: 76px;
       }
 
-      .hero-meta {
-        gap: 18px;
-        margin-top: 6px;
-        font-size: 12px;
+      .revenue-block {
+        padding-left: 22px;
+      }
+
+      .revenue-label {
+        font-size: 14px;
+      }
+
+      .revenue-value {
+        margin-top: 8px;
+        font-size: 34px;
+      }
+
+      .revenue-note {
+        margin-top: 8px;
+        font-size: 10px;
       }
 
       .metrics {
@@ -798,6 +886,10 @@
         font-size: 24px;
       }
 
+      .metric-value.city-leader {
+        font-size: 22px;
+      }
+
       .metric-note {
         margin-top: 6px;
         font-size: 10px;
@@ -815,11 +907,6 @@
         font-size: 11px;
       }
 
-      .footer {
-        gap: 16px;
-        padding-top: 6px;
-        font-size: 12px;
-      }
     }
 
     @media (max-width: 1280px) {
@@ -840,13 +927,21 @@
         padding: 8px 72px;
       }
 
+      .header-mark,
       .title-wrap,
-      .status-box {
+      .clock-box {
         grid-column: 1;
       }
 
-      .status-box {
+      .header-mark {
         justify-self: center;
+      }
+
+      .clock-box {
+        justify-self: center;
+        padding: 8px 0 0;
+        border-left: 0;
+        border-top: 1px solid rgba(255, 211, 106, 0.34);
         text-align: center;
       }
 
@@ -890,7 +985,7 @@
         width: 58px;
       }
 
-      .status-box {
+      .clock-box {
         min-width: 0;
         width: 100%;
       }
@@ -899,13 +994,28 @@
         padding: 22px 14px;
       }
 
+      .today-summary {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .summary-divider {
+        width: 100%;
+        height: 1px;
+      }
+
+      .revenue-block {
+        padding-left: 0;
+        text-align: center;
+      }
+
       .total-number {
         font-size: 48px;
         white-space: normal;
       }
 
       .metrics {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
       }
 
       .metric-value {
@@ -914,11 +1024,6 @@
 
       .rank-row {
         grid-template-columns: 36px 54px minmax(0, 1fr);
-      }
-
-      .city-rate {
-        grid-column: 3;
-        text-align: left;
       }
 
       .trend-head {
@@ -944,64 +1049,63 @@
     <div class="cloud two" aria-hidden="true"></div>
 
     <header class="header">
-      <div></div>
+      <div class="header-mark">江西云信</div>
       <div class="title-wrap">
-        <h1 class="board-title" id="boardTitle">江西新春发展实时战报</h1>
-        <div class="title-subline">新春发送量分时滚动展示</div>
+        <h1 class="board-title" id="boardTitle">云信产品新春发展大屏战报</h1>
+        <div class="title-subline">今日发送战况</div>
       </div>
-      <div class="status-box">
-        <div>展示时间：<span class="status-strong" id="currentTime">--</span></div>
-        <div><span class="status-strong" id="displayStatus">--</span></div>
+      <div class="clock-box">
+        <div class="current-date" id="currentDate">--</div>
+        <div class="current-clock" id="currentTime">--:--:--</div>
       </div>
     </header>
 
     <main class="content">
       <section class="panel rank-panel">
         <div class="panel-title">
-          <h2>江西 11 个地市排行</h2>
-          <span>按当前累计发送量自动排序</span>
+          <h2>今日地市发送排名</h2>
+          <span>发送量 / 预计收入</span>
         </div>
         <div class="rank-list" id="rankList"></div>
       </section>
 
       <section class="stage">
-        <div class="hero-panel">
-          <div class="hero-label">累计发送量</div>
-          <div class="total-number" id="totalNumber">0</div>
-          <div class="hero-meta">
-            <span>全省计划总量：<strong id="provinceTarget">0</strong></span>
-            <span>活动进度：<strong id="activityProgress">0.0%</strong></span>
-            <span>活动周期：<strong id="activityPeriod">--</strong></span>
+        <div class="hero-panel today-summary">
+          <div class="summary-main">
+            <div class="hero-label">今日累计发送量</div>
+            <div class="total-number" id="totalNumber">0</div>
+            <div class="summary-unit">条</div>
+          </div>
+          <div class="summary-divider" aria-hidden="true"></div>
+          <div class="revenue-block">
+            <div class="revenue-label">预计今日收入</div>
+            <div class="revenue-value" id="todayRevenue">¥0.00</div>
+            <div class="revenue-note">按 0.05 元/条估算</div>
           </div>
         </div>
 
         <div class="metrics">
           <div class="metric-card">
-            <div class="metric-label">今日新增</div>
-            <div class="metric-value" id="todayNew">0</div>
-            <div class="metric-note">按当日分时批次累计</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">本小时新增</div>
+            <div class="metric-label">本小时发送量</div>
             <div class="metric-value" id="hourNew">0</div>
-            <div class="metric-note">按本小时批次累计</div>
+            <div class="metric-note">今日整点至当前</div>
           </div>
           <div class="metric-card">
-            <div class="metric-label">活动完成率</div>
-            <div class="metric-value" id="finishRate">0.0%</div>
-            <div class="metric-note">累计发送量 / 计划总量</div>
+            <div class="metric-label">近 10 分钟发送量</div>
+            <div class="metric-value" id="recentNew">0</div>
+            <div class="metric-note">当前发送节奏</div>
           </div>
           <div class="metric-card">
-            <div class="metric-label">剩余计划量</div>
-            <div class="metric-value" id="remainingTarget">0</div>
-            <div class="metric-note">计划总量 - 当前累计</div>
+            <div class="metric-label">当前领先地市</div>
+            <div class="metric-value city-leader" id="leadingCity">--</div>
+            <div class="metric-note" id="leadingValue">--</div>
           </div>
         </div>
 
         <div class="trend-panel">
           <div class="trend-head">
-            <h2>春节活动累计发送趋势</h2>
-            <div class="trend-legend"><span class="legend-line"></span> 累计发送趋势</div>
+            <h2>今日分时发送走势</h2>
+            <div class="trend-legend"><span class="legend-line"></span> 累计发送量</div>
           </div>
           <div class="trend-canvas-wrap">
             <canvas id="trendChart"></canvas>
@@ -1009,11 +1113,6 @@
         </div>
       </section>
     </main>
-
-    <footer class="footer">
-      <span>日报量按每日 08:00-20:00 分批滚动展示</span>
-      <span>最后刷新时间：<strong id="lastRefresh">--</strong></span>
-    </footer>
   </div>
 
   <script>
@@ -1023,25 +1122,19 @@
      * =========================
      *
      * 1. boardTitle：页面大标题。
-     * 2. replayStartDate：把 Excel 第一天对应到哪个实际展示日。
-     *    - 当前设为 2026-08-23，第一天对应 8 月 23 日，之后每天顺延一行数据。
-     *    - 如果要按 Excel 原始日期播放，把它改为 null。
-     * 3. dailyStartHour / dailyEndHour：每天滚动时段，当前为 08:00-20:00。
-     * 4. refreshSeconds：页面刷新间隔，建议保持 2 秒。
-     * 5. dailyData：来自“地市日报表”的发送总量，一行对应一天。
-     *
-     * 滚动规则：
-     * - 每天 08:00 前不增长，20:00 后完成当天全量。
-     * - 各地市按不同的分钟权重和秒级批次错峰增长，不会一起跳数。
-     * - 计算为固定时间轨迹，刷新网页不会回退或重新随机。
+     * 2. dataStartDate：日数据第 1 行启用日期，之后按自然日依次取下一行。
+     * 3. dailyStartHour / dailyEndHour：每日发送时段。
+     * 4. unitPrice：每条收入单价，当前为 0.05 元。
+     * 5. dailyData：每行对应一个业务日的 11 个地市发送量。
      */
     const CONFIG = {
-      boardTitle: "江西新春发展实时战报",
+      boardTitle: "云信产品新春发展大屏战报",
 
-      replayStartDate: "2026-08-23",
+      dataStartDate: "2026-08-23",
       dailyStartHour: 8,
       dailyEndHour: 20,
       refreshSeconds: 2,
+      unitPrice: 0.05,
 
       cityNames: ["南昌","九江","景德镇","萍乡","新余","鹰潭","赣州","宜春","上饶","吉安","抚州"],
 
@@ -1113,17 +1206,14 @@
   <script>
     const refs = {
       boardTitle: document.getElementById("boardTitle"),
+      currentDate: document.getElementById("currentDate"),
       currentTime: document.getElementById("currentTime"),
-      displayStatus: document.getElementById("displayStatus"),
       totalNumber: document.getElementById("totalNumber"),
-      provinceTarget: document.getElementById("provinceTarget"),
-      activityProgress: document.getElementById("activityProgress"),
-      activityPeriod: document.getElementById("activityPeriod"),
-      todayNew: document.getElementById("todayNew"),
+      todayRevenue: document.getElementById("todayRevenue"),
       hourNew: document.getElementById("hourNew"),
-      finishRate: document.getElementById("finishRate"),
-      remainingTarget: document.getElementById("remainingTarget"),
-      lastRefresh: document.getElementById("lastRefresh"),
+      recentNew: document.getElementById("recentNew"),
+      leadingCity: document.getElementById("leadingCity"),
+      leadingValue: document.getElementById("leadingValue"),
       rankList: document.getElementById("rankList"),
       trendChart: document.getElementById("trendChart"),
       fireworks: document.getElementById("fireworks")
@@ -1144,17 +1234,7 @@
       date: row[0],
       values: row.slice(1).map((value) => Math.max(0, Number(value) || 0))
     }));
-    const cityTargets = CONFIG.cityNames.map((_, cityIndex) => (
-      sourceDays.reduce((sum, day) => sum + day.values[cityIndex], 0)
-    ));
-    const cityPrefixByDay = [CONFIG.cityNames.map(() => 0)];
     const scheduleCache = new Map();
-
-    sourceDays.forEach((day, dayIndex) => {
-      cityPrefixByDay.push(cityPrefixByDay[dayIndex].map((value, cityIndex) => (
-        value + day.values[cityIndex]
-      )));
-    });
 
     function clamp(value, min, max) {
       return Math.min(Math.max(value, min), max);
@@ -1181,12 +1261,20 @@
       return Math.round((laterUtc - earlierUtc) / DAY_MS);
     }
 
-    function getReplayStartDay() {
-      return parseDateKey(CONFIG.replayStartDate || sourceDays[0].date);
+    function getDataStartDay() {
+      return parseDateKey(CONFIG.dataStartDate || sourceDays[0].date);
     }
 
     function getLiveDayIndex(date) {
-      return calendarDayDifference(startOfDay(date), getReplayStartDay());
+      return calendarDayDifference(startOfDay(date), getDataStartDay());
+    }
+
+    function getDataDayIndex(date) {
+      const liveDayIndex = getLiveDayIndex(date);
+      if (liveDayIndex < 0) {
+        return 0;
+      }
+      return liveDayIndex % sourceDays.length;
     }
 
     function getDisplayNow() {
@@ -1198,108 +1286,37 @@
       const dayIndex = clamp(Number.isFinite(requestedDay) ? requestedDay : 0, 0, sourceDays.length - 1);
       const cycleMs = 6 * 60 * 1000;
       const ratio = ((Date.now() - previewStartedAt) % cycleMs) / cycleMs;
-      const date = addDays(getReplayStartDay(), dayIndex);
+      const date = addDays(getDataStartDay(), dayIndex);
       date.setHours(Number(CONFIG.dailyStartHour) || 8, 0, 0, 0);
       date.setTime(date.getTime() + ratio * getDailyDurationMs());
       return date;
-    }
-
-    function getVisibleDate(liveDate) {
-      if (!CONFIG.replayStartDate) {
-        return liveDate;
-      }
-
-      const sourceIndex = clamp(getLiveDayIndex(liveDate), 0, sourceDays.length - 1);
-      const visibleDate = parseDateKey(sourceDays[sourceIndex].date);
-      visibleDate.setHours(
-        liveDate.getHours(),
-        liveDate.getMinutes(),
-        liveDate.getSeconds(),
-        liveDate.getMilliseconds()
-      );
-      return visibleDate;
-    }
-
-    function getDisplayStatus(date) {
-      const dayIndex = getLiveDayIndex(date);
-      if (dayIndex < 0) {
-        return "活动尚未开始";
-      }
-      if (dayIndex >= sourceDays.length) {
-        return "全部日报展示完成";
-      }
-
-      const secondsOfDay = date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
-      const startSeconds = Number(CONFIG.dailyStartHour) * 3600;
-      const endSeconds = Number(CONFIG.dailyEndHour) * 3600;
-      if (secondsOfDay < startSeconds) {
-        return "等待 08:00 开始";
-      }
-      if (secondsOfDay >= endSeconds) {
-        return "当日展示已完成";
-      }
-      return "08:00-20:00 分批滚动中";
     }
 
     function formatNumber(value) {
       return numberFormatter.format(Math.max(0, Math.round(value)));
     }
 
-    function formatPercent(value) {
-      return `${(clamp(value, 0, 1) * 100).toFixed(1)}%`;
+    function formatCurrency(value) {
+      return `¥${Math.max(0, Number(value) || 0).toLocaleString("zh-CN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}`;
     }
 
-    function formatDateTime(date) {
+    function formatClock(date) {
       const pad = (num) => String(num).padStart(2, "0");
-      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+      return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
     }
 
-    function formatShortDate(value) {
-      const date = value instanceof Date ? value : parseDateKey(value);
-      const pad = (num) => String(num).padStart(2, "0");
-      return `${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-    }
-
-    function getStartDate() {
-      const date = getReplayStartDay();
-      date.setHours(Number(CONFIG.dailyStartHour) || 8, 0, 0, 0);
-      return date;
-    }
-
-    function getEndDate() {
-      const date = addDays(getReplayStartDay(), sourceDays.length - 1);
-      date.setHours(Number(CONFIG.dailyEndHour) || 20, 0, 0, 0);
-      return date;
-    }
-
-    function getProvinceTarget() {
-      return cityTargets.reduce((sum, value) => sum + value, 0);
+    function formatCurrentDate(date) {
+      const weekdays = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+      return `${date.getFullYear()}年${String(date.getMonth() + 1).padStart(2, "0")}月${String(date.getDate()).padStart(2, "0")}日 ${weekdays[date.getDay()]}`;
     }
 
     function getDailyDurationMs() {
       const startHour = Number(CONFIG.dailyStartHour) || 8;
       const endHour = Number(CONFIG.dailyEndHour) || 20;
       return Math.max(1, endHour - startHour) * 60 * 60 * 1000;
-    }
-
-    function progressAt(date) {
-      const dayIndex = getLiveDayIndex(date);
-      if (dayIndex < 0) {
-        return 0;
-      }
-      if (dayIndex >= sourceDays.length) {
-        return 1;
-      }
-
-      const startHour = Number(CONFIG.dailyStartHour) || 8;
-      const elapsedMs = (
-        (date.getHours() - startHour) * 60 * 60 * 1000
-        + date.getMinutes() * 60 * 1000
-        + date.getSeconds() * 1000
-        + date.getMilliseconds()
-      );
-      const dayProgress = clamp(elapsedMs / getDailyDurationMs(), 0, 1);
-      return clamp((dayIndex + dayProgress) / sourceDays.length, 0, 1);
     }
 
     function hashString(value) {
@@ -1426,52 +1443,41 @@
       return schedule.prefix[minuteIndex] + getMinuteReleased(minuteQuota, second, minuteSeed);
     }
 
-    function getCityValueAt(cityIndex, date) {
-      const dayIndex = getLiveDayIndex(date);
-      if (dayIndex < 0) {
-        return 0;
-      }
-      if (dayIndex >= sourceDays.length) {
-        return cityTargets[cityIndex];
-      }
-
-      return cityPrefixByDay[dayIndex][cityIndex] + getDayReleased(dayIndex, cityIndex, date);
+    function getTodayTotalAt(dayIndex, date) {
+      return CONFIG.cityNames.reduce((sum, _, cityIndex) => (
+        sum + getDayReleased(dayIndex, cityIndex, date)
+      ), 0);
     }
 
     function getSnapshot(date) {
-      const provinceTarget = getProvinceTarget();
-      const progress = progressAt(date);
+      const dayIndex = getDataDayIndex(date);
+      const unitPrice = Math.max(0, Number(CONFIG.unitPrice) || 0);
       const cities = CONFIG.cityNames.map((name, cityIndex) => {
-        const current = getCityValueAt(cityIndex, date);
-        const target = cityTargets[cityIndex];
+        const current = getLiveDayIndex(date) < 0 ? 0 : getDayReleased(dayIndex, cityIndex, date);
         return {
           name,
           current,
-          target,
-          rate: target > 0 ? current / target : 0
+          income: current * unitPrice
         };
       });
       const total = cities.reduce((sum, city) => sum + city.current, 0);
       const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const hourStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours());
-      const totalAtDayStart = getTotalAt(dayStart);
-      const totalAtHourStart = getTotalAt(hourStart);
+      const recentStart = new Date(Math.max(dayStart.getTime(), date.getTime() - 10 * 60 * 1000));
+      const totalAtHourStart = getTodayTotalAt(dayIndex, hourStart);
+      const totalAtRecentStart = getTodayTotalAt(dayIndex, recentStart);
+      const leading = [...cities].sort((a, b) => b.current - a.current)[0] || { name: "--", current: 0, income: 0 };
 
       return {
         now: date,
-        progress,
+        dayIndex,
         cities,
         total,
-        provinceTarget,
-        todayNew: Math.max(0, total - totalAtDayStart),
         hourNew: Math.max(0, total - totalAtHourStart),
-        finishRate: provinceTarget > 0 ? total / provinceTarget : 0,
-        remaining: Math.max(0, provinceTarget - total)
+        recentNew: Math.max(0, total - totalAtRecentStart),
+        revenue: total * unitPrice,
+        leading
       };
-    }
-
-    function getTotalAt(date) {
-      return CONFIG.cityNames.reduce((sum, _, cityIndex) => sum + getCityValueAt(cityIndex, date), 0);
     }
 
     function easeOutCubic(value) {
@@ -1517,13 +1523,12 @@
         <div class="city-progress-wrap">
           <div class="city-values">
             <span class="city-current"></span>
-            <span class="city-target"></span>
+            <span class="city-income"></span>
           </div>
           <div class="progress-track">
             <div class="progress-bar"></div>
           </div>
         </div>
-        <div class="city-rate"></div>
       `;
       rankRows.set(name, row);
       return row;
@@ -1531,6 +1536,7 @@
 
     function renderRanking(cities) {
       const sorted = [...cities].sort((a, b) => b.current - a.current);
+      const leadingValue = Math.max(1, sorted[0]?.current || 0);
       const fragment = document.createDocumentFragment();
 
       sorted.forEach((city, index) => {
@@ -1538,10 +1544,9 @@
         row.classList.toggle("top", index < 3);
         row.querySelector(".rank-badge").textContent = index + 1;
         row.querySelector(".city-name").textContent = city.name;
-        row.querySelector(".city-current").textContent = formatNumber(city.current);
-        row.querySelector(".city-target").textContent = `计划 ${formatNumber(city.target)}`;
-        row.querySelector(".city-rate").textContent = formatPercent(city.rate);
-        row.querySelector(".progress-bar").style.width = `${clamp(city.rate, 0, 1) * 100}%`;
+        row.querySelector(".city-current").textContent = `${formatNumber(city.current)} 条`;
+        row.querySelector(".city-income").textContent = formatCurrency(city.income);
+        row.querySelector(".progress-bar").style.width = `${clamp(city.current / leadingValue, 0, 1) * 100}%`;
         fragment.appendChild(row);
       });
 
@@ -1549,26 +1554,23 @@
     }
 
     function render() {
-      const now = getDisplayNow();
-      const visibleNow = getVisibleDate(now);
-      latestSnapshot = getSnapshot(now);
+      const dataNow = getDisplayNow();
+      const realNow = new Date();
+      latestSnapshot = getSnapshot(dataNow);
       const duration = Math.max(650, Number(CONFIG.refreshSeconds || 2) * 850);
       const roundedTotal = Math.round(latestSnapshot.total);
       const totalChanged = lastRenderedTotal !== null && roundedTotal > lastRenderedTotal;
 
       refs.boardTitle.textContent = CONFIG.boardTitle;
-      refs.currentTime.textContent = formatDateTime(visibleNow);
-      refs.displayStatus.textContent = getDisplayStatus(now);
-      refs.provinceTarget.textContent = formatNumber(latestSnapshot.provinceTarget);
-      refs.activityProgress.textContent = formatPercent(latestSnapshot.progress);
-      refs.activityPeriod.textContent = `${formatShortDate(sourceDays[0].date)} 至 ${formatShortDate(sourceDays[sourceDays.length - 1].date)}`;
-      refs.lastRefresh.textContent = formatDateTime(visibleNow);
+      refs.currentDate.textContent = formatCurrentDate(realNow);
+      refs.currentTime.textContent = formatClock(realNow);
+      refs.leadingCity.textContent = latestSnapshot.leading.name;
+      refs.leadingValue.textContent = `${formatNumber(latestSnapshot.leading.current)} 条 · ${formatCurrency(latestSnapshot.leading.income)}`;
 
       animateValue("total", refs.totalNumber, latestSnapshot.total, formatNumber, duration);
-      animateValue("todayNew", refs.todayNew, latestSnapshot.todayNew, formatNumber, duration);
+      animateValue("revenue", refs.todayRevenue, latestSnapshot.revenue, formatCurrency, duration);
       animateValue("hourNew", refs.hourNew, latestSnapshot.hourNew, formatNumber, duration);
-      animateValue("finishRate", refs.finishRate, latestSnapshot.finishRate, formatPercent, duration);
-      animateValue("remaining", refs.remainingTarget, latestSnapshot.remaining, formatNumber, duration);
+      animateValue("recentNew", refs.recentNew, latestSnapshot.recentNew, formatNumber, duration);
 
       if (totalChanged) {
         refs.totalNumber.classList.remove("pulse");
@@ -1582,9 +1584,9 @@
     }
 
     function updateClockOnly() {
-      const now = getDisplayNow();
-      refs.currentTime.textContent = formatDateTime(getVisibleDate(now));
-      refs.displayStatus.textContent = getDisplayStatus(now);
+      const now = new Date();
+      refs.currentDate.textContent = formatCurrentDate(now);
+      refs.currentTime.textContent = formatClock(now);
     }
 
     function setupTrendCanvas() {
@@ -1598,25 +1600,39 @@
       return { canvas, ctx, width: rect.width, height: rect.height };
     }
 
+    function getNiceCeiling(value) {
+      const adjusted = Math.max(1, value * 1.12);
+      const power = Math.pow(10, Math.floor(Math.log10(adjusted)));
+      const normalized = adjusted / power;
+      const multiplier = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+      return multiplier * power;
+    }
+
     function drawTrend() {
       const { ctx, width, height } = setupTrendCanvas();
       if (!width || !height) {
         return;
       }
 
-      const now = latestSnapshot ? latestSnapshot.now : new Date();
-      const start = getStartDate();
-      const end = getEndDate();
-      const provinceTarget = getProvinceTarget();
-      const left = 50;
-      const right = 28;
-      const top = 20;
+      const now = latestSnapshot ? latestSnapshot.now : getDisplayNow();
+      const dayIndex = latestSnapshot ? latestSnapshot.dayIndex : getDataDayIndex(now);
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), Number(CONFIG.dailyStartHour) || 8);
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), Number(CONFIG.dailyEndHour) || 20);
+      const startMs = start.getTime();
+      const endMs = end.getTime();
+      const span = Math.max(1, endMs - startMs);
+      const visibleEndMs = clamp(now.getTime(), startMs, endMs);
+      const currentTotal = latestSnapshot ? latestSnapshot.total : getTodayTotalAt(dayIndex, now);
+      const maxValue = getNiceCeiling(currentTotal);
+      const left = 62;
+      const right = 24;
+      const top = 18;
       const bottom = 38;
       const chartWidth = width - left - right;
       const chartHeight = height - top - bottom;
 
       ctx.clearRect(0, 0, width, height);
-      ctx.font = "13px Microsoft YaHei, Arial";
+      ctx.font = "12px Microsoft YaHei, Arial";
       ctx.lineWidth = 1;
       ctx.strokeStyle = "rgba(255, 229, 158, 0.16)";
       ctx.fillStyle = "rgba(255, 236, 174, 0.56)";
@@ -1627,37 +1643,36 @@
         ctx.moveTo(left, y);
         ctx.lineTo(left + chartWidth, y);
         ctx.stroke();
-        const labelValue = provinceTarget * (1 - i / 4);
-        ctx.fillText(formatNumber(labelValue), 8, y + 4);
+        ctx.textAlign = "right";
+        ctx.fillText(formatNumber(maxValue * (1 - i / 4)), left - 10, y + 4);
+      }
+
+      for (let hour = Number(CONFIG.dailyStartHour) || 8; hour <= (Number(CONFIG.dailyEndHour) || 20); hour += 2) {
+        const ratio = (hour - (Number(CONFIG.dailyStartHour) || 8)) / Math.max(1, (Number(CONFIG.dailyEndHour) || 20) - (Number(CONFIG.dailyStartHour) || 8));
+        const x = left + chartWidth * ratio;
+        ctx.textAlign = "center";
+        ctx.fillText(`${String(hour).padStart(2, "0")}:00`, x, height - 10);
       }
 
       const points = [];
-      const steps = 72;
-      const startMs = start.getTime();
-      const endMs = end.getTime();
-      const span = Math.max(1, endMs - startMs);
-
-      for (let i = 0; i <= steps; i += 1) {
-        const t = i / steps;
-        const sample = new Date(startMs + span * t);
-        const value = getTotalAt(sample);
-        const x = left + chartWidth * t;
-        const y = top + chartHeight * (1 - clamp(value / Math.max(1, provinceTarget), 0, 1));
-        points.push({ x, y });
+      const visibleRatio = clamp((visibleEndMs - startMs) / span, 0, 1);
+      const steps = Math.max(1, Math.ceil(48 * visibleRatio));
+      for (let index = 0; index <= steps; index += 1) {
+        const ratio = visibleRatio * index / steps;
+        const sample = new Date(startMs + span * ratio);
+        const value = getTodayTotalAt(dayIndex, sample);
+        points.push({
+          x: left + chartWidth * ratio,
+          y: top + chartHeight * (1 - clamp(value / maxValue, 0, 1))
+        });
       }
 
       const fillGradient = ctx.createLinearGradient(0, top, 0, top + chartHeight);
       fillGradient.addColorStop(0, "rgba(255, 214, 102, 0.34)");
       fillGradient.addColorStop(1, "rgba(255, 94, 31, 0.02)");
       ctx.beginPath();
-      points.forEach((point, index) => {
-        if (index === 0) {
-          ctx.moveTo(point.x, point.y);
-        } else {
-          ctx.lineTo(point.x, point.y);
-        }
-      });
-      ctx.lineTo(left + chartWidth, top + chartHeight);
+      points.forEach((point, index) => index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y));
+      ctx.lineTo(points[points.length - 1].x, top + chartHeight);
       ctx.lineTo(left, top + chartHeight);
       ctx.closePath();
       ctx.fillStyle = fillGradient;
@@ -1668,13 +1683,7 @@
       lineGradient.addColorStop(0.55, "#ffd25f");
       lineGradient.addColorStop(1, "#fff3b0");
       ctx.beginPath();
-      points.forEach((point, index) => {
-        if (index === 0) {
-          ctx.moveTo(point.x, point.y);
-        } else {
-          ctx.lineTo(point.x, point.y);
-        }
-      });
+      points.forEach((point, index) => index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y));
       ctx.strokeStyle = lineGradient;
       ctx.lineWidth = 4;
       ctx.shadowColor = "rgba(255, 203, 82, 0.62)";
@@ -1682,30 +1691,14 @@
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      const currentRatio = clamp((now.getTime() - startMs) / span, 0, 1);
-      const markerX = left + chartWidth * currentRatio;
-      const markerY = top + chartHeight * (1 - clamp((latestSnapshot ? latestSnapshot.total : getTotalAt(now)) / Math.max(1, provinceTarget), 0, 1));
-      ctx.strokeStyle = "rgba(255, 239, 174, 0.42)";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([5, 7]);
+      const marker = points[points.length - 1];
       ctx.beginPath();
-      ctx.moveTo(markerX, top);
-      ctx.lineTo(markerX, top + chartHeight);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      ctx.beginPath();
-      ctx.arc(markerX, markerY, 6, 0, Math.PI * 2);
+      ctx.arc(marker.x, marker.y, 6, 0, Math.PI * 2);
       ctx.fillStyle = "#fff2a4";
       ctx.shadowColor = "rgba(255, 218, 95, 0.9)";
       ctx.shadowBlur = 18;
       ctx.fill();
       ctx.shadowBlur = 0;
-
-      ctx.fillStyle = "rgba(255, 236, 174, 0.72)";
-      ctx.fillText(formatShortDate(sourceDays[0].date), left, height - 10);
-      ctx.textAlign = "right";
-      ctx.fillText(formatShortDate(sourceDays[sourceDays.length - 1].date), left + chartWidth, height - 10);
       ctx.textAlign = "left";
     }
 
