@@ -2081,6 +2081,9 @@
     .overview-value {
       overflow: visible;
       color: #fff0bd;
+      font-family: "Bahnschrift SemiCondensed", "Arial Narrow", "Microsoft YaHei", sans-serif;
+      font-weight: 700;
+      font-feature-settings: "tnum" 1;
       text-shadow:
         0 0 12px rgba(255, 218, 127, 0.54),
         0 0 30px rgba(230, 121, 37, 0.24);
@@ -2089,11 +2092,11 @@
     }
 
     .today-value {
-      font-size: 68px;
+      font-size: 88px;
     }
 
     .overview-value {
-      font-size: 46px;
+      font-size: 58px;
     }
 
     .today-value.rolling,
@@ -2212,11 +2215,11 @@
       }
 
       .today-value {
-        font-size: 43px;
+        font-size: 54px;
       }
 
       .overview-value {
-        font-size: 33px;
+        font-size: 40px;
       }
 
       .today-grid,
@@ -2456,12 +2459,12 @@
       }
 
       .today-value {
-        font-size: 31px;
+        font-size: 36px;
         white-space: nowrap;
       }
 
       .overview-value {
-        font-size: 26px;
+        font-size: 30px;
         white-space: nowrap;
       }
 
@@ -2679,14 +2682,14 @@
           <div class="today-grid">
             <div class="today-metric">
               <div class="today-label">今日发送量</div>
-              <div class="today-value" id="todayTotal">0.000</div>
+              <div class="today-value" id="todayTotal">0.00</div>
               <div class="today-unit">万条</div>
-              <div class="metric-delta" id="todaySendDelta">08:00-20:00</div>
+              <div class="metric-delta" id="todaySendDelta">批次数据持续汇入</div>
             </div>
             <div class="today-divider" aria-hidden="true"></div>
             <div class="today-metric">
               <div class="today-label">预计今日收入</div>
-              <div class="today-value" id="todayRevenue">0.0000</div>
+              <div class="today-value" id="todayRevenue">0.000</div>
               <div class="today-unit">万元</div>
               <div class="metric-delta" id="todayIncomeDelta">按 0.05 元/条测算</div>
             </div>
@@ -2694,7 +2697,7 @@
           <div class="live-feed" id="liveFeed" aria-live="polite">
             <span class="feed-label">最新播报</span>
             <strong id="liveFeedCity">全省</strong>
-            <span id="liveFeedDelta">数据正在载入</span>
+            <span id="liveFeedDelta">地市批次持续汇入</span>
             <span class="feed-income" id="liveFeedIncome"></span>
           </div>
         </section>
@@ -2707,13 +2710,13 @@
           <div class="overview-grid">
             <div class="overview-metric">
               <div class="overview-label">累计发送量</div>
-              <div class="overview-value" id="cumulativeTotal">0.000</div>
+              <div class="overview-value" id="cumulativeTotal">0.00</div>
               <div class="overview-unit">万条</div>
             </div>
             <div class="overview-divider" aria-hidden="true"></div>
             <div class="overview-metric">
               <div class="overview-label">预计累计收入</div>
-              <div class="overview-value" id="cumulativeRevenue">0.0000</div>
+              <div class="overview-value" id="cumulativeRevenue">0.000</div>
               <div class="overview-unit">万元</div>
             </div>
           </div>
@@ -2878,6 +2881,8 @@
     let latestSnapshot = null;
     let resizeTimer = null;
     let previousTodayCityValues = null;
+    let previousLiveDayIndex = null;
+    let pendingBatchByCity = CONFIG.cityNames.map(() => 0);
     let lastFeedAt = 0;
     let idleFeedIndex = 0;
     let lastFeedSignature = "";
@@ -2994,15 +2999,15 @@
 
     function formatWanLive(value) {
       return (Math.max(0, Number(value) || 0) / 10000).toLocaleString("zh-CN", {
-        minimumFractionDigits: 3,
-        maximumFractionDigits: 3
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
       });
     }
 
     function formatWanMoney(value) {
       return (Math.max(0, Number(value) || 0) / 10000).toLocaleString("zh-CN", {
-        minimumFractionDigits: 4,
-        maximumFractionDigits: 4
+        minimumFractionDigits: 3,
+        maximumFractionDigits: 3
       });
     }
 
@@ -3109,28 +3114,41 @@
         return 0;
       }
 
-      const cacheKey = `${quota}|${seed}|${cityIndex}`;
+      const cacheKey = `batch|${quota}|${seed}|${cityIndex}`;
       if (!secondScheduleCache.has(cacheKey)) {
         const random = createRandom(seed);
         const lane = cityIndex % 4;
-        const weights = Array.from({ length: 60 }, (_, secondIndex) => (
-          secondIndex % 4 === lane ? 0.58 + random() * 1.08 : 0
-        ));
+        const batchCount = quota >= 12000 ? 5 : quota >= 3000 ? 3 : quota >= 600 ? 2 : 1;
+        const weights = Array.from({ length: batchCount }, () => 0.72 + random() * 0.56);
         const weightTotal = weights.reduce((sum, value) => sum + value, 0);
-        const chunks = [];
+        const batchAmounts = [];
         let assigned = 0;
-        let carry = 0;
 
-        weights.forEach((weight) => {
-          const exact = quota * weight / Math.max(1, weightTotal) + carry;
-          const chunk = Math.floor(exact);
-          carry = exact - chunk;
-          chunks.push(chunk);
-          assigned += chunk;
+        weights.forEach((weight, index) => {
+          const amount = index === weights.length - 1
+            ? quota - assigned
+            : Math.floor(quota * weight / Math.max(1, weightTotal));
+          batchAmounts.push(amount);
+          assigned += amount;
         });
 
-        const lastActiveSecond = 59 - ((59 - lane + 4) % 4);
-        chunks[lastActiveSecond] += quota - assigned;
+        const chunks = Array(60).fill(0);
+        const usedSeconds = new Set();
+        batchAmounts.forEach((amount, index) => {
+          const anchor = Math.round((index + 1) * 60 / (batchCount + 1));
+          const jitter = Math.round((random() - 0.5) * 2) * 4;
+          let scheduledSecond = clamp(anchor + jitter, 0, 59);
+          scheduledSecond += (lane - scheduledSecond % 4 + 4) % 4;
+          if (scheduledSecond > 59) {
+            scheduledSecond -= 4;
+          }
+          while (usedSeconds.has(scheduledSecond)) {
+            scheduledSecond = (scheduledSecond + 4) % 60;
+          }
+          usedSeconds.add(scheduledSecond);
+          chunks[scheduledSecond] += amount;
+        });
+
         const prefix = [0];
         chunks.forEach((chunk) => prefix.push(prefix[prefix.length - 1] + chunk));
         secondScheduleCache.set(cacheKey, prefix);
@@ -3297,6 +3315,13 @@
       const hasCurrentDay = snapshot.liveDayIndex >= 0 && snapshot.liveDayIndex < sourceDays.length;
       const isSending = hasCurrentDay && nowSeconds >= startSeconds && nowSeconds < endSeconds;
       const isUpdating = hasCurrentDay;
+
+      if (previousLiveDayIndex !== null && previousLiveDayIndex !== snapshot.liveDayIndex) {
+        previousTodayCityValues = null;
+        pendingBatchByCity = CONFIG.cityNames.map(() => 0);
+        lastFeedAt = 0;
+      }
+
       const currentValues = snapshot.todayCities.map((city) => city.current);
       const unitPrice = Math.max(0, Number(CONFIG.unitPrice) || 0);
       const cityDeltas = previousTodayCityValues
@@ -3305,8 +3330,20 @@
             delta: Math.max(0, city.current - previousTodayCityValues[index])
           }))
         : [];
-      const totalDelta = cityDeltas.reduce((sum, city) => sum + city.delta, 0);
-      const leadingDelta = [...cityDeltas].sort((a, b) => b.delta - a.delta)[0];
+      cityDeltas.forEach((city, index) => {
+        pendingBatchByCity[index] += city.delta;
+      });
+      const pendingBatches = snapshot.todayCities.map((city, index) => ({
+        name: city.name,
+        delta: pendingBatchByCity[index]
+      }));
+      const pendingTotal = pendingBatches.reduce((sum, city) => sum + city.delta, 0);
+      const leadingBatch = [...pendingBatches].sort((a, b) => b.delta - a.delta)[0];
+      const minimumVisibleBatch = isSending ? 200 : 100;
+      const minimumBatchInterval = isSending ? 1500 : 5000;
+      const batchReady = isUpdating
+        && leadingBatch?.delta >= minimumVisibleBatch
+        && Date.now() - lastFeedAt >= minimumBatchInterval;
 
       document.body?.classList.toggle("is-live", isUpdating);
       refs.liveStatusText.textContent = isSending
@@ -3315,18 +3352,21 @@
           ? "数据持续更新"
           : "今日战报";
 
-      if (isUpdating && totalDelta > 0 && leadingDelta?.delta > 0) {
-        refs.todaySendDelta.textContent = `本次 +${formatNumber(totalDelta)} 条`;
-        refs.todayIncomeDelta.textContent = `本次 +${formatYuan(totalDelta * unitPrice)} 元`;
+      if (batchReady) {
+        refs.todaySendDelta.textContent = `最新批次 +${formatNumber(pendingTotal)} 条`;
+        refs.todayIncomeDelta.textContent = `折合收入 +${formatYuan(pendingTotal * unitPrice)} 元`;
         announceLiveFeed(
-          leadingDelta.name,
-          `+${formatNumber(leadingDelta.delta)} 条`,
-          `预计收入 +${formatYuan(leadingDelta.delta * unitPrice)} 元`
+          leadingBatch.name,
+          `+${formatNumber(leadingBatch.delta)} 条`,
+          `预计收入 +${formatYuan(leadingBatch.delta * unitPrice)} 元`
         );
+        pendingBatchByCity = CONFIG.cityNames.map(() => 0);
         lastFeedAt = Date.now();
       } else if (isUpdating) {
-        refs.todaySendDelta.textContent = isSending ? "省内地市错峰上量" : "数据平稳更新";
-        refs.todayIncomeDelta.textContent = "按 0.05 元/条测算";
+        if (!lastFeedAt) {
+          refs.todaySendDelta.textContent = "批次数据持续汇入";
+          refs.todayIncomeDelta.textContent = "按 0.05 元/条测算";
+        }
       } else {
         refs.todaySendDelta.textContent = "发送时段 08:00-20:00";
         refs.todayIncomeDelta.textContent = "按 0.05 元/条测算";
@@ -3347,6 +3387,7 @@
       }
 
       previousTodayCityValues = currentValues;
+      previousLiveDayIndex = snapshot.liveDayIndex;
     }
 
     function setRankingView(view) {
