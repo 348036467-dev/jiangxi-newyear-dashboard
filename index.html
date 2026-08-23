@@ -1939,8 +1939,8 @@
     }
 
     .zodiac-backdrop {
-      opacity: 0.14;
-      filter: saturate(0.72) contrast(0.94) sepia(0.04);
+      opacity: 0.2;
+      filter: saturate(0.78) contrast(0.98) sepia(0.03);
     }
 
     .decor-lantern {
@@ -1997,16 +1997,7 @@
     }
 
     .today-panel::after {
-      content: "";
-      position: absolute;
-      z-index: 0;
-      top: 0;
-      bottom: 0;
-      width: 22%;
-      pointer-events: none;
-      background: linear-gradient(90deg, transparent, rgba(255, 229, 164, 0.07), transparent);
-      transform: translateX(-180%) skewX(-12deg);
-      animation: liveSweep 5.2s ease-in-out infinite;
+      display: none;
     }
 
     .section-head,
@@ -2089,8 +2080,8 @@
       text-shadow:
         0 0 12px rgba(255, 218, 127, 0.54),
         0 0 30px rgba(230, 121, 37, 0.24);
-      transform-origin: center;
-      will-change: transform, filter;
+      transform: none !important;
+      filter: none !important;
     }
 
     .today-value {
@@ -2102,8 +2093,12 @@
     }
 
     .today-value.rolling,
-    .overview-value.rolling {
-      animation: metricRolling 0.72s cubic-bezier(0.2, 0.8, 0.2, 1);
+    .overview-value.rolling,
+    .today-value.pulse,
+    .overview-value.pulse {
+      animation: none !important;
+      transform: none !important;
+      filter: none !important;
     }
 
     .today-unit,
@@ -2270,10 +2265,12 @@
 
       .zodiac-backdrop {
         position: fixed;
-        inset: 0;
-        width: 100%;
-        height: 100vh;
-        opacity: 0.075;
+        inset: 64px auto auto -8%;
+        width: 116%;
+        height: auto;
+        max-width: none;
+        opacity: 0.2;
+        object-fit: contain;
         object-position: center top;
       }
 
@@ -2357,11 +2354,17 @@
         width: 100%;
         min-width: 0;
         padding: 12px 12px 11px;
+        background:
+          linear-gradient(138deg, rgba(116, 12, 19, 0.78), rgba(55, 5, 10, 0.72)),
+          radial-gradient(circle at 50% 0%, rgba(255, 205, 111, 0.08), transparent 58%);
       }
 
       .today-panel {
         order: 1;
         min-height: 248px;
+        background:
+          linear-gradient(138deg, rgba(139, 17, 24, 0.8), rgba(69, 5, 11, 0.74)),
+          radial-gradient(circle at 45% -10%, rgba(255, 213, 119, 0.12), transparent 55%);
       }
 
       .overview-panel {
@@ -2606,20 +2609,9 @@
       50% { opacity: 1; transform: scale(1.16); }
     }
 
-    @keyframes liveSweep {
-      0%, 58% { transform: translateX(-180%) skewX(-12deg); }
-      78%, 100% { transform: translateX(620%) skewX(-12deg); }
-    }
-
-    @keyframes metricRolling {
-      0% { transform: translateY(3px) scale(0.992); filter: brightness(0.92); }
-      55% { transform: translateY(-2px) scale(1.01); filter: brightness(1.16); }
-      100% { transform: translateY(0) scale(1); filter: brightness(1); }
-    }
-
     @keyframes feedIn {
-      from { opacity: 0.55; transform: translateY(4px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0.58; }
+      to { opacity: 1; }
     }
   </style>
 </head>
@@ -2666,14 +2658,14 @@
           <div class="today-grid">
             <div class="today-metric">
               <div class="today-label">今日发送量</div>
-              <div class="today-value" id="todayTotal">0.00</div>
+              <div class="today-value" id="todayTotal">0.000</div>
               <div class="today-unit">万条</div>
               <div class="metric-delta" id="todaySendDelta">08:00-20:00</div>
             </div>
             <div class="today-divider" aria-hidden="true"></div>
             <div class="today-metric">
               <div class="today-label">预计今日收入</div>
-              <div class="today-value" id="todayRevenue">0.000</div>
+              <div class="today-value" id="todayRevenue">0.0000</div>
               <div class="today-unit">万元</div>
               <div class="metric-delta" id="todayIncomeDelta">按 0.05 元/条测算</div>
             </div>
@@ -2694,13 +2686,13 @@
           <div class="overview-grid">
             <div class="overview-metric">
               <div class="overview-label">累计发送量</div>
-              <div class="overview-value" id="cumulativeTotal">0.00</div>
+              <div class="overview-value" id="cumulativeTotal">0.000</div>
               <div class="overview-unit">万条</div>
             </div>
             <div class="overview-divider" aria-hidden="true"></div>
             <div class="overview-metric">
               <div class="overview-label">预计累计收入</div>
-              <div class="overview-value" id="cumulativeRevenue">0.000</div>
+              <div class="overview-value" id="cumulativeRevenue">0.0000</div>
               <div class="overview-unit">万元</div>
             </div>
           </div>
@@ -2741,7 +2733,8 @@
      * 2. campaignStartDate：累计统计起始日期，日数据第 1 行从这一天开始使用。
      * 3. dailyStartHour / dailyEndHour：每日发送时段。
      * 4. unitPrice：每条收入单价，当前为 0.05 元。
-     * 5. dailyData：每行对应一个业务日的 11 个地市发送量。
+     * 5. eveningTailValue：20点后至24点的小幅尾量，保证数字缓慢延续。
+     * 6. dailyData：每行对应一个业务日的 11 个地市发送量。
      */
     const CONFIG = {
       boardTitle: "江西云信产品新春发展大屏战报",
@@ -2751,6 +2744,7 @@
       dailyEndHour: 20,
       refreshSeconds: 1,
       unitPrice: 0.05,
+      eveningTailValue: 20000,
 
       cityNames: ["南昌","九江","景德镇","萍乡","新余","鹰潭","赣州","宜春","上饶","吉安","抚州"],
 
@@ -2846,7 +2840,6 @@
     };
 
     const numberFormatter = new Intl.NumberFormat("zh-CN");
-    const animatedValues = new Map();
     const rankRows = {
       today: new Map(),
       cumulative: new Map()
@@ -2854,8 +2847,6 @@
 
     let latestSnapshot = null;
     let resizeTimer = null;
-    let lastRenderedCumulative = null;
-    let lastRenderedToday = null;
     let previousTodayCityValues = null;
     let lastFeedAt = 0;
     let idleFeedIndex = 0;
@@ -2872,6 +2863,31 @@
     sourceDays.forEach((day) => {
       const previous = cityPrefixByDay[cityPrefixByDay.length - 1];
       cityPrefixByDay.push(previous.map((value, cityIndex) => value + day.values[cityIndex]));
+    });
+
+    function allocateEveningTail(day) {
+      const totalTail = Math.max(0, Math.round(Number(CONFIG.eveningTailValue) || 0));
+      const weightTotal = day.values.reduce((sum, value) => sum + value, 0);
+      if (!totalTail || !weightTotal) {
+        return CONFIG.cityNames.map(() => 0);
+      }
+
+      const values = [];
+      let assigned = 0;
+      day.values.forEach((value, cityIndex) => {
+        const isLast = cityIndex === day.values.length - 1;
+        const tail = isLast ? totalTail - assigned : Math.floor(totalTail * value / weightTotal);
+        values.push(Math.max(0, tail));
+        assigned += tail;
+      });
+      return values;
+    }
+
+    const eveningTailByDay = sourceDays.map(allocateEveningTail);
+    const eveningTailPrefixByDay = [CONFIG.cityNames.map(() => 0)];
+    eveningTailByDay.forEach((dayValues) => {
+      const previous = eveningTailPrefixByDay[eveningTailPrefixByDay.length - 1];
+      eveningTailPrefixByDay.push(previous.map((value, cityIndex) => value + dayValues[cityIndex]));
     });
     const scheduleCache = new Map();
     const secondScheduleCache = new Map();
@@ -2950,10 +2966,17 @@
       });
     }
 
-    function formatWanMoney(value) {
+    function formatWanLive(value) {
       return (Math.max(0, Number(value) || 0) / 10000).toLocaleString("zh-CN", {
         minimumFractionDigits: 3,
         maximumFractionDigits: 3
+      });
+    }
+
+    function formatWanMoney(value) {
+      return (Math.max(0, Number(value) || 0) / 10000).toLocaleString("zh-CN", {
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4
       });
     }
 
@@ -3113,6 +3136,21 @@
       return schedule.prefix[minuteIndex] + getMinuteReleased(minuteQuota, second, minuteSeed, cityIndex);
     }
 
+    function getEveningTailReleased(dayIndex, cityIndex, date) {
+      const amount = eveningTailByDay[dayIndex]?.[cityIndex] || 0;
+      if (!amount) {
+        return 0;
+      }
+
+      const endSeconds = (Number(CONFIG.dailyEndHour) || 20) * 3600;
+      const secondsOfDay = date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
+      const delaySeconds = (cityIndex % 4) * 9;
+      const elapsedSeconds = secondsOfDay - endSeconds - delaySeconds;
+      const availableSeconds = 24 * 3600 - endSeconds - delaySeconds;
+      const ratio = clamp(elapsedSeconds / Math.max(1, availableSeconds), 0, 1);
+      return Math.floor(amount * ratio);
+    }
+
     function getTodayTotalAt(dayIndex, date) {
       return CONFIG.cityNames.reduce((sum, _, cityIndex) => (
         sum + getDayReleased(dayIndex, cityIndex, date)
@@ -3126,8 +3164,11 @@
       const hasCurrentDay = liveDayIndex >= 0 && liveDayIndex < sourceDays.length;
       const completedDayCount = liveDayIndex < 0 ? 0 : Math.min(liveDayIndex, sourceDays.length);
       const completedValues = cityPrefixByDay[completedDayCount];
+      const completedTailValues = eveningTailPrefixByDay[completedDayCount];
       const todayCities = CONFIG.cityNames.map((name, cityIndex) => {
-        const current = hasCurrentDay ? getDayReleased(dayIndex, cityIndex, date) : 0;
+        const current = hasCurrentDay
+          ? getDayReleased(dayIndex, cityIndex, date) + getEveningTailReleased(dayIndex, cityIndex, date)
+          : 0;
         return {
           name,
           current,
@@ -3135,7 +3176,7 @@
         };
       });
       const cumulativeCities = CONFIG.cityNames.map((name, cityIndex) => {
-        const current = completedValues[cityIndex] + todayCities[cityIndex].current;
+        const current = completedValues[cityIndex] + completedTailValues[cityIndex] + todayCities[cityIndex].current;
         return {
           name,
           current,
@@ -3158,44 +3199,8 @@
       };
     }
 
-    function easeOutCubic(value) {
-      return 1 - Math.pow(1 - value, 3);
-    }
-
-    function animateValue(key, element, nextValue, formatter, duration) {
-      const previous = animatedValues.get(key);
-      const initialGap = Math.min(nextValue * 0.004, 500000);
-      const from = previous ? previous.current : Math.max(0, nextValue - initialGap);
-      const startTime = performance.now();
-      const effectiveDuration = previous ? duration : Math.max(1800, duration);
-
-      if (previous && previous.frame) {
-        cancelAnimationFrame(previous.frame);
-      }
-
-      const state = { current: from, frame: null };
-      animatedValues.set(key, state);
-      element.classList.remove("rolling");
-      void element.offsetWidth;
-      element.classList.add("rolling");
-
-      function step(now) {
-        const ratio = clamp((now - startTime) / effectiveDuration, 0, 1);
-        const value = from + (nextValue - from) * easeOutCubic(ratio);
-        state.current = value;
-        element.textContent = formatter(value);
-
-        if (ratio < 1) {
-          state.frame = requestAnimationFrame(step);
-        } else {
-          state.current = nextValue;
-          state.frame = null;
-          element.textContent = formatter(nextValue);
-          element.classList.remove("rolling");
-        }
-      }
-
-      state.frame = requestAnimationFrame(step);
+    function updateMetricValue(element, nextValue, formatter) {
+      element.textContent = formatter(nextValue);
     }
 
     function createRankRow(name, rowMap) {
@@ -3257,7 +3262,8 @@
       const endSeconds = (Number(CONFIG.dailyEndHour) || 20) * 3600;
       const nowSeconds = snapshot.now.getHours() * 3600 + snapshot.now.getMinutes() * 60 + snapshot.now.getSeconds();
       const hasCurrentDay = snapshot.liveDayIndex >= 0 && snapshot.liveDayIndex < sourceDays.length;
-      const isActive = hasCurrentDay && nowSeconds >= startSeconds && nowSeconds < endSeconds;
+      const isSending = hasCurrentDay && nowSeconds >= startSeconds && nowSeconds < endSeconds;
+      const isUpdating = hasCurrentDay && nowSeconds >= startSeconds;
       const currentValues = snapshot.todayCities.map((city) => city.current);
       const unitPrice = Math.max(0, Number(CONFIG.unitPrice) || 0);
       const cityDeltas = previousTodayCityValues
@@ -3269,14 +3275,16 @@
       const totalDelta = cityDeltas.reduce((sum, city) => sum + city.delta, 0);
       const leadingDelta = [...cityDeltas].sort((a, b) => b.delta - a.delta)[0];
 
-      document.body?.classList.toggle("is-live", isActive);
-      refs.liveStatusText.textContent = isActive
+      document.body?.classList.toggle("is-live", isUpdating);
+      refs.liveStatusText.textContent = isSending
         ? "发送进行中"
         : nowSeconds < startSeconds
           ? `${String(CONFIG.dailyStartHour).padStart(2, "0")}:00 启动`
-          : "今日战报";
+          : hasCurrentDay
+            ? "数据持续更新"
+            : "今日战报";
 
-      if (isActive && totalDelta > 0 && leadingDelta?.delta > 0) {
+      if (isUpdating && totalDelta > 0 && leadingDelta?.delta > 0) {
         refs.todaySendDelta.textContent = `本次 +${formatNumber(totalDelta)} 条`;
         refs.todayIncomeDelta.textContent = `本次 +${formatYuan(totalDelta * unitPrice)} 元`;
         announceLiveFeed(
@@ -3285,8 +3293,8 @@
           `预计收入 +${formatYuan(leadingDelta.delta * unitPrice)} 元`
         );
         lastFeedAt = Date.now();
-      } else if (isActive) {
-        refs.todaySendDelta.textContent = "省内地市错峰上量";
+      } else if (isUpdating) {
+        refs.todaySendDelta.textContent = isSending ? "省内地市错峰上量" : "数据平稳更新";
         refs.todayIncomeDelta.textContent = "按 0.05 元/条测算";
       } else {
         refs.todaySendDelta.textContent = "发送时段 08:00-20:00";
@@ -3334,11 +3342,6 @@
       const dataNow = getDisplayNow();
       const realNow = new Date();
       latestSnapshot = getSnapshot(dataNow);
-      const duration = Math.max(620, Number(CONFIG.refreshSeconds || 1) * 780);
-      const roundedCumulative = Math.round(latestSnapshot.cumulativeTotal);
-      const roundedToday = Math.round(latestSnapshot.todayTotal);
-      const cumulativeChanged = lastRenderedCumulative !== null && roundedCumulative > lastRenderedCumulative;
-      const todayChanged = lastRenderedToday !== null && roundedToday > lastRenderedToday;
       const campaignStart = getCampaignStartDay();
 
       refs.boardTitle.textContent = CONFIG.boardTitle;
@@ -3348,31 +3351,12 @@
       refs.todayDate.textContent = formatDateChinese(realNow);
       refs.cumulativeRankRange.textContent = `${formatDateShort(campaignStart)} 至今`;
 
-      animateValue("cumulativeTotal", refs.cumulativeTotal, latestSnapshot.cumulativeTotal, formatWan, duration);
-      animateValue("cumulativeRevenue", refs.cumulativeRevenue, latestSnapshot.cumulativeRevenue, formatWanMoney, duration);
-      animateValue("todayTotal", refs.todayTotal, latestSnapshot.todayTotal, formatWan, duration);
-      animateValue("todayRevenue", refs.todayRevenue, latestSnapshot.todayRevenue, formatWanMoney, duration);
+      updateMetricValue(refs.cumulativeTotal, latestSnapshot.cumulativeTotal, formatWanLive);
+      updateMetricValue(refs.cumulativeRevenue, latestSnapshot.cumulativeRevenue, formatWanMoney);
+      updateMetricValue(refs.todayTotal, latestSnapshot.todayTotal, formatWanLive);
+      updateMetricValue(refs.todayRevenue, latestSnapshot.todayRevenue, formatWanMoney);
 
       updateLivePresentation(latestSnapshot);
-
-      if (cumulativeChanged) {
-        [refs.cumulativeTotal, refs.cumulativeRevenue].forEach((element) => {
-          element.classList.remove("pulse");
-          void element.offsetWidth;
-          element.classList.add("pulse");
-        });
-      }
-
-      if (todayChanged) {
-        [refs.todayTotal, refs.todayRevenue].forEach((element) => {
-          element.classList.remove("pulse");
-          void element.offsetWidth;
-          element.classList.add("pulse");
-        });
-      }
-
-      lastRenderedCumulative = roundedCumulative;
-      lastRenderedToday = roundedToday;
 
       renderRanking(latestSnapshot.todayCities, refs.todayRankList, rankRows.today);
       renderRanking(latestSnapshot.cumulativeCities, refs.cumulativeRankList, rankRows.cumulative);
