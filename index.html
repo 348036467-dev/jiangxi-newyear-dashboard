@@ -1045,6 +1045,7 @@
 
     .year-badge {
       justify-self: start;
+      margin-left: 26px;
       padding: 8px 18px;
       border: 1px solid rgba(255, 218, 115, 0.64);
       border-radius: 4px;
@@ -1059,6 +1060,15 @@
 
     .board-title {
       font-size: 44px;
+    }
+
+    .title-wrap {
+      grid-column: 2;
+    }
+
+    .clock-box {
+      grid-column: 3;
+      margin-right: 24px;
     }
 
     .dashboard-content {
@@ -1302,8 +1312,14 @@
       }
 
       .year-badge {
+        grid-column: 1;
+        margin-left: 18px;
         padding: 5px 11px;
         font-size: 13px;
+      }
+
+      .title-wrap {
+        grid-column: 2;
       }
 
       .board-title {
@@ -1311,7 +1327,9 @@
       }
 
       .clock-box {
+        grid-column: 3;
         min-width: 200px;
+        margin-right: 18px;
         padding-left: 10px;
       }
 
@@ -1402,12 +1420,14 @@
       }
 
       .ranking-columns .rank-list {
+        grid-template-rows: repeat(11, minmax(0, 1fr));
         gap: 3px;
       }
 
       .ranking-columns .rank-row {
         grid-template-columns: 23px 40px minmax(0, 1fr);
         gap: 5px;
+        min-height: 0;
         padding: 2px 5px;
       }
 
@@ -1462,6 +1482,8 @@
       .clock-box {
         grid-column: 1;
         justify-self: center;
+        margin-left: 0;
+        margin-right: 0;
       }
 
       .board-title {
