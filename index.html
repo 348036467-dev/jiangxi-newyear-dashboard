@@ -779,7 +779,7 @@
       </div>
       <div class="status-box">
         <div>展示时间：<span class="status-strong" id="currentTime">--</span></div>
-        <div><span class="status-strong">08:00-20:00 分批滚动中</span></div>
+        <div><span class="status-strong" id="displayStatus">--</span></div>
       </div>
     </header>
 
@@ -942,6 +942,7 @@
     const refs = {
       boardTitle: document.getElementById("boardTitle"),
       currentTime: document.getElementById("currentTime"),
+      displayStatus: document.getElementById("displayStatus"),
       totalNumber: document.getElementById("totalNumber"),
       provinceTarget: document.getElementById("provinceTarget"),
       activityProgress: document.getElementById("activityProgress"),
@@ -1045,6 +1046,27 @@
         liveDate.getMilliseconds()
       );
       return visibleDate;
+    }
+
+    function getDisplayStatus(date) {
+      const dayIndex = getLiveDayIndex(date);
+      if (dayIndex < 0) {
+        return "活动尚未开始";
+      }
+      if (dayIndex >= sourceDays.length) {
+        return "全部日报展示完成";
+      }
+
+      const secondsOfDay = date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
+      const startSeconds = Number(CONFIG.dailyStartHour) * 3600;
+      const endSeconds = Number(CONFIG.dailyEndHour) * 3600;
+      if (secondsOfDay < startSeconds) {
+        return "等待 08:00 开始";
+      }
+      if (secondsOfDay >= endSeconds) {
+        return "当日展示已完成";
+      }
+      return "08:00-20:00 分批滚动中";
     }
 
     function formatNumber(value) {
@@ -1364,6 +1386,7 @@
 
       refs.boardTitle.textContent = CONFIG.boardTitle;
       refs.currentTime.textContent = formatDateTime(visibleNow);
+      refs.displayStatus.textContent = getDisplayStatus(now);
       refs.provinceTarget.textContent = formatNumber(latestSnapshot.provinceTarget);
       refs.activityProgress.textContent = formatPercent(latestSnapshot.progress);
       refs.activityPeriod.textContent = `${formatShortDate(sourceDays[0].date)} 至 ${formatShortDate(sourceDays[sourceDays.length - 1].date)}`;
@@ -1387,7 +1410,9 @@
     }
 
     function updateClockOnly() {
-      refs.currentTime.textContent = formatDateTime(getVisibleDate(getDisplayNow()));
+      const now = getDisplayNow();
+      refs.currentTime.textContent = formatDateTime(getVisibleDate(now));
+      refs.displayStatus.textContent = getDisplayStatus(now);
     }
 
     function setupTrendCanvas() {
